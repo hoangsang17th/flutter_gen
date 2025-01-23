@@ -6,11 +6,17 @@ repository: https://github.com/FlutterGen/flutter_gen
 documentation: https://github.com/FlutterGen/flutter_gen
 issue_tracker: https://github.com/FlutterGen/flutter_gen/issues
 
+publish_to: none
+
 environment:
   sdk: '>=2.17.0 <4.0.0'
 
 dependencies:
-  flutter_gen_core: 5.8.0
+  flutter_gen_core: 
+    git:
+      url: https://github.com/hoangsang17th/flutter_gen.git
+      ref: features/skip-keyName-in-image
+      path: packages/core/
   build: ^2.0.0
   collection: ^1.17.0
   crypto: ^3.0.0

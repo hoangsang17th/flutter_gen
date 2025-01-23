@@ -16,7 +16,11 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^2.0.0
-  flutter_gen_runner: ^5.8.0
+  flutter_gen_runner: 
+    git:
+      url: https://github.com/hoangsang17th/flutter_gen.git
+      ref: features/skip-keyName-in-image
+      path: packages/runner/
 
 flutter_gen:
   output: lib/gen/
