@@ -1,0 +1,12 @@
+{
+  "Buttons": {
+    "Start": "Start",
+    "login": "Login now",
+    "PasswordIncorrect": "Password Incorrect",
+    "logout": "Logout and close app",
+    "Save": "Lưu",
+    "Create": "Tạo",
+    "Delete": "Xóa",
+    "Update": "Edit and Save"
+  }
+}

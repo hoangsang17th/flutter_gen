@@ -4,6 +4,7 @@ import 'package:dart_style/dart_style.dart' show DartFormatter;
 import 'package:flutter_gen_core/generators/assets_generator.dart';
 import 'package:flutter_gen_core/generators/colors_generator.dart';
 import 'package:flutter_gen_core/generators/fonts_generator.dart';
+import 'package:flutter_gen_core/generators/locales_generator.dart';
 import 'package:flutter_gen_core/settings/config.dart';
 import 'package:flutter_gen_core/utils/file.dart';
 import 'package:path/path.dart' show join, normalize;
@@ -15,6 +16,7 @@ class FlutterGenerator {
     this.assetsName = 'assets.gen.dart',
     this.colorsName = 'colors.gen.dart',
     this.fontsName = 'fonts.gen.dart',
+    this.localesName = 'locales.gen.dart',
   });
 
   final File pubspecFile;
@@ -22,6 +24,7 @@ class FlutterGenerator {
   final String assetsName;
   final String colorsName;
   final String fontsName;
+  final String localesName;
 
   Future<void> build({Config? config, FileWriter? writer}) async {
     config ??= loadPubspecConfigOrNull(pubspecFile, buildFile: buildFile);
@@ -62,6 +65,18 @@ class FlutterGenerator {
           normalize(join(pubspecFile.parent.path, output, colorsName));
       writer(generated, colorsPath);
       stdout.writeln('[FlutterGen] Generated: $colorsPath');
+    }
+
+    if (flutterGen.locales.enabled && flutterGen.locales.folder.isNotEmpty) {
+      final generated = await generateLocales(
+        pubspecFile,
+        flutterGen.locales,
+        formatter,
+      );
+      final localesPath =
+          normalize(join(pubspecFile.parent.path, output, localesName));
+      writer(generated, localesPath);
+      stdout.writeln('[FlutterGen] Generated: $localesPath');
     }
 
     if (flutterGen.assets.enabled && flutter.assets.isNotEmpty) {

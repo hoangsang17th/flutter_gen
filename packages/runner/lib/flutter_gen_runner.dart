@@ -63,6 +63,7 @@ class FlutterGenBuilder extends Builder {
           generator.assetsName,
           generator.colorsName,
           generator.fontsName,
+          generator.localesName,
         ])
           join(output, name),
       ],

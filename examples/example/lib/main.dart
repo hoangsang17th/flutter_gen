@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 void main() {
-  print(MyAssets.images.chip4.chip4.flavors);
+  print(MyAssets.images.chip4.chip4.path);
   runApp(const MyApp());
 }
 
@@ -67,16 +67,7 @@ class MyApp extends StatelessWidget {
                     decoder: LottieComposition.decodeGZip,
                   ),
                 ),
-                MyAssets.images.chip1.image(),
-                Container(
-                  height: 400,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: MyAssets.images.chip1.provider(),
-                    ),
-                  ),
-                  child: const Center(child: Text('Deco')),
-                ),
+               
                 // Use from example_resource package.
                 MyAssets.images.icons.kmm.svg(key: const Key('kmm_svg')),
                 MyAssets.images.icons.fuchsia.svg(),
