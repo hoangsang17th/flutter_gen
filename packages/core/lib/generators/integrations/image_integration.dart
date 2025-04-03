@@ -13,7 +13,7 @@ class ImageIntegration extends Integration {
       isPackage ? "'packages/$packageName/\$_assetName'" : '_assetName';
 
   @override
-  List<Import> get requiredImports => [];
+  List<Import> get requiredImports => const [];
 
   @override
   String get classOutput => _classDefinition;

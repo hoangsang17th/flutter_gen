@@ -53,6 +53,38 @@ Widget build(BuildContext context) {
 
 ## Installation
 
+### As a part of build_runner
+
+1. Add [build_runner] and [FlutterGen] to your package's pubspec.yaml file:
+
+   ```yaml
+   dev_dependencies:
+     build_runner:
+     flutter_gen_runner:
+   ```
+
+2. Install [FlutterGen]
+
+   ```sh
+   flutter pub get
+   ```
+
+3. Use [FlutterGen]
+
+   ```sh
+   dart run build_runner build
+   ```
+
+### Pub Global
+
+Works with macOS, Linux and Windows.
+
+```sh
+dart pub global activate flutter_gen
+```
+
+You might need to [set up your path](https://dart.dev/tools/pub/cmd/pub-global#running-a-script-from-your-path).
+
 ### Homebrew
 
 Works with macOS and Linux.
@@ -77,38 +109,6 @@ asdf install fluttergen latest
 ```
 
 See also: [FlutterGen/asdf-fluttergen](https://github.com/FlutterGen/asdf-fluttergen)
-
-### Pub Global
-
-Works with macOS, Linux and Windows.
-
-```sh
-dart pub global activate flutter_gen
-```
-
-You might need to [set up your path](https://dart.dev/tools/pub/cmd/pub-global#running-a-script-from-your-path).
-
-### As a part of build_runner
-
-1. Add [build_runner] and [FlutterGen] to your package's pubspec.yaml file:
-
-```
-dev_dependencies:
-  build_runner:
-  flutter_gen_runner:
-```
-
-2. Install [FlutterGen]
-
-```sh
-flutter pub get
-```
-
-3. Use [FlutterGen]
-
-```sh
-dart run build_runner build
-```
 
 ### GitHub Actions
 
@@ -147,6 +147,7 @@ flutter_gen:
 
   # Optional
   integrations:
+    image: true
     flutter_svg: true
     rive: true
     lottie: true
@@ -255,7 +256,7 @@ This would add the package constant to the generated class. For example:
 
 ```dart
 class Assets {
-  Assets._();
+  const Assets._();
 
   static const String package = 'test';
 
@@ -370,6 +371,15 @@ Widget build(BuildContext context) {
 
 ```
 
+If you do not want to generate `AssetGenImage`, set `flutter_gen > integrations > image` to `false`.
+
+```yaml
+# pubspec.yaml
+flutter_gen:
+  integrations:
+    image: false
+```
+
 If you are using SVG images with [flutter_svg](https://pub.dev/packages/flutter_svg) you can use the integration feature.
 
 ```yaml
@@ -394,11 +404,13 @@ Widget build(BuildContext context) {
 
 **Available Integrations**
 
-| Packages                                                | File extension       | Setting               | Usage                                     |
-|---------------------------------------------------------|----------------------|-----------------------|-------------------------------------------|
-| [flutter_svg](https://pub.dev/packages/flutter_svg)     | .svg                 | `flutter_svg: true`   | Assets.images.icons.paint.**svg()**       |
-| [rive](https://pub.dev/packages/rive)                   | .riv                 | `rive: true`          | Assets.rive.vehicles.**rive()**           |
-| [lottie](https://pub.dev/packages/lottie)               | .json, .zip, .lottie | `lottie: true`        | Assets.lottie.hamburgerArrow.**lottie()** |
+| Packages                                            | File extension             | Setting             | Usage                                     |
+|-----------------------------------------------------|----------------------------|---------------------|-------------------------------------------|
+| [flutter_svg](https://pub.dev/packages/flutter_svg) | .svg                       | `flutter_svg: true` | Assets.images.icons.paint.**svg()**       |
+| [rive](https://pub.dev/packages/rive)               | .riv                       | `rive: true`        | Assets.rive.vehicles.**rive()**           |
+| [lottie](https://pub.dev/packages/lottie)           | .json, .zip, .lottie, .tgs | `lottie: true`      | Assets.lottie.hamburgerArrow.**lottie()** |
+
+**Note:** For [lottie](https://pub.dev/packages/lottie) integration with `.lottie` and `.tgs` files, you must add a custom decoder via `decoder` parameter, see [lottie's document](https://pub.dev/packages/lottie#telegram-stickers-tgs-and-dotlottie-lottie) for more information.
 
 In other cases, the asset is generated as String class.
 

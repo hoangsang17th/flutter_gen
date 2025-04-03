@@ -17,6 +17,10 @@ class $AssetsLottieGen {
   LottieGenImage get xuiIZ9X1Rf =>
       const LottieGenImage('assets/lottie/XuiIZ9X1Rf.lottie');
 
+  /// File path: assets/lottie/cat_cat.tgs
+  LottieGenImage get catCat =>
+      const LottieGenImage('assets/lottie/cat_cat.tgs');
+
   /// File path: assets/lottie/hamburger_arrow.json
   LottieGenImage get hamburgerArrow =>
       const LottieGenImage('assets/lottie/hamburger_arrow.json');
@@ -26,21 +30,21 @@ class $AssetsLottieGen {
       const LottieGenImage('assets/lottie/spinning_carrousel.zip');
 
   /// List of all assets
-  List<LottieGenImage> get values => [
-        xuiIZ9X1Rf,
-        hamburgerArrow,
-        spinningCarrousel,
-      ];
+  List<LottieGenImage> get values =>
+      [xuiIZ9X1Rf, catCat, hamburgerArrow, spinningCarrousel];
 }
 
 class Assets {
-  Assets._();
+  const Assets._();
 
   static const $AssetsLottieGen lottie = $AssetsLottieGen();
 }
 
 class LottieGenImage {
-  const LottieGenImage(this._assetName, {this.flavors = const {}});
+  const LottieGenImage(
+    this._assetName, {
+    this.flavors = const {},
+  });
 
   final String _assetName;
   final Set<String> flavors;
@@ -57,8 +61,11 @@ class LottieGenImage {
     _lottie.LottieImageProviderFactory? imageProviderFactory,
     Key? key,
     AssetBundle? bundle,
-    Widget Function(BuildContext, Widget, _lottie.LottieComposition?)?
-        frameBuilder,
+    Widget Function(
+      BuildContext,
+      Widget,
+      _lottie.LottieComposition?,
+    )? frameBuilder,
     ImageErrorWidgetBuilder? errorBuilder,
     double? width,
     double? height,
@@ -68,6 +75,9 @@ class LottieGenImage {
     bool? addRepaintBoundary,
     FilterQuality? filterQuality,
     void Function(String)? onWarning,
+    _lottie.LottieDecoder? decoder,
+    _lottie.RenderCache? renderCache,
+    bool? backgroundLoading,
   }) {
     return _lottie.Lottie.asset(
       _assetName,
@@ -92,6 +102,9 @@ class LottieGenImage {
       addRepaintBoundary: addRepaintBoundary,
       filterQuality: filterQuality,
       onWarning: onWarning,
+      decoder: decoder,
+      renderCache: renderCache,
+      backgroundLoading: backgroundLoading,
     );
   }
 
