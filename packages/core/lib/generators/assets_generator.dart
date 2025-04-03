@@ -59,15 +59,24 @@ Future<String> generateAssets(
   }
 
   final integrations = <Integration>[
-    ImageIntegration(config.packageParameterLiteral,
-        parseMetadata: config.flutterGen.parseMetadata),
+    if (config.flutterGen.integrations.image)
+      ImageIntegration(
+        config.packageParameterLiteral,
+        parseMetadata: config.flutterGen.parseMetadata,
+      ),
     if (config.flutterGen.integrations.flutterSvg)
-      SvgIntegration(config.packageParameterLiteral,
-          parseMetadata: config.flutterGen.parseMetadata),
+      SvgIntegration(
+        config.packageParameterLiteral,
+        parseMetadata: config.flutterGen.parseMetadata,
+      ),
     if (config.flutterGen.integrations.rive)
-      RiveIntegration(config.packageParameterLiteral),
+      RiveIntegration(
+        config.packageParameterLiteral,
+      ),
     if (config.flutterGen.integrations.lottie)
-      LottieIntegration(config.packageParameterLiteral),
+      LottieIntegration(
+        config.packageParameterLiteral,
+      ),
   ];
 
   // Warn for deprecated configs.
@@ -111,18 +120,19 @@ Future<String> generateAssets(
   }
 
   final classesBuffer = StringBuffer();
-  if (config.flutterGen.assets.outputs.isDotDelimiterStyle) {
-    final definition = await _dotDelimiterStyleDefinition(config, integrations);
-    classesBuffer.writeln(definition);
-  } else if (config.flutterGen.assets.outputs.isSnakeCaseStyle) {
-    final definition = await _snakeCaseStyleDefinition(config, integrations);
-    classesBuffer.writeln(definition);
-  } else if (config.flutterGen.assets.outputs.isCamelCaseStyle) {
-    final definition = await _camelCaseStyleDefinition(config, integrations);
-    classesBuffer.writeln(definition);
-  } else {
-    throw 'The value of "flutter_gen/assets/style." is incorrect.';
+  final _StyleDefinition definition;
+  switch (config.flutterGen.assets.outputs.style) {
+    case FlutterGenElementAssetsOutputsStyle.dotDelimiterStyle:
+      definition = _dotDelimiterStyleDefinition;
+      break;
+    case FlutterGenElementAssetsOutputsStyle.snakeCaseStyle:
+      definition = _snakeCaseStyleDefinition;
+      break;
+    case FlutterGenElementAssetsOutputsStyle.camelCaseStyle:
+      definition = _camelCaseStyleDefinition;
+      break;
   }
+  classesBuffer.writeln(await definition(config, integrations));
 
   final imports = <Import>{};
   for (final integration in integrations.where((e) => e.isEnabled)) {
@@ -197,13 +207,16 @@ List<FlavoredAsset> _getAssetRelativePathList(
     }
     final assetAbsolutePath = join(rootPath, tempAsset.path);
     if (FileSystemEntity.isDirectorySync(assetAbsolutePath)) {
-      assetRelativePathList.addAll(Directory(assetAbsolutePath)
-          .listSync()
-          .whereType<File>()
-          .map(
-            (e) => tempAsset.copyWith(path: relative(e.path, from: rootPath)),
-          )
-          .toList());
+      assetRelativePathList.addAll(
+        Directory(assetAbsolutePath)
+            .listSync()
+            .whereType<File>()
+            .map(
+              (file) =>
+                  tempAsset.copyWith(path: relative(file.path, from: rootPath)),
+            )
+            .toList(),
+      );
     } else if (FileSystemEntity.isFileSync(assetAbsolutePath)) {
       assetRelativePathList.add(
         tempAsset.copyWith(path: relative(assetAbsolutePath, from: rootPath)),
@@ -375,15 +388,17 @@ Future<String> _dotDelimiterStyleDefinition(
         // Add this directory reference to Assets class
         // if we are not under the default asset folder
         if (dirname(assetType.path) == '.') {
-          assetsStaticStatements.add(_Statement(
-            type: className,
-            filePath: assetType.posixStylePath,
-            name: assetType.baseName.camelCase(),
-            value: '$className()',
-            isConstConstructor: true,
-            isDirectory: true,
-            needDartDoc: true,
-          ));
+          assetsStaticStatements.add(
+            _Statement(
+              type: className,
+              filePath: assetType.posixStylePath,
+              name: assetType.baseName.camelCase(),
+              value: '$className()',
+              isConstConstructor: true,
+              isDirectory: true,
+              needDartDoc: true,
+            ),
+          );
         }
       }
 
@@ -399,6 +414,11 @@ Future<String> _dotDelimiterStyleDefinition(
   );
   return buffer.toString();
 }
+
+typedef _StyleDefinition = Future<String> Function(
+  AssetsGenConfig config,
+  List<Integration> integrations,
+);
 
 /// Generate style like Assets.foo_bar
 Future<String> _snakeCaseStyleDefinition(
@@ -464,10 +484,13 @@ String _flatStyleAssetsClassDefinition(
   List<_Statement> statements,
   String? packageName,
 ) {
-  final statementsBlock =
-      statements.map((statement) => '''${statement.toDartDocString()}
+  final statementsBlock = statements
+      .map(
+        (statement) => '''${statement.toDartDocString()}
            ${statement.toStaticFieldString()}
-           ''').join('\n');
+           ''',
+      )
+      .join('\n');
   final valuesBlock = _assetValuesDefinition(statements, static: true);
   return _assetsClassDefinition(
     className,
@@ -500,7 +523,9 @@ String _assetValuesDefinition(
   bool static = false,
 }) {
   final values = statements.where((element) => !element.isDirectory);
-  if (values.isEmpty) return '';
+  if (values.isEmpty) {
+    return '';
+  }
   final names = values.map((value) => value.name).join(', ');
   final type = values.every((element) => element.type == values.first.type)
       ? values.first.type
@@ -520,7 +545,7 @@ String _assetsClassDefinition(
 ) {
   return '''
 class $className {
-  $className._();
+  const $className._();
 ${packageName != null ? "\n  static const String package = '$packageName';" : ''}
 
   $statementsBlock
