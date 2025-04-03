@@ -75,7 +75,8 @@ FlutterGen _$FlutterGenFromJson(Map json) => $checkedCreate(
             'assets',
             'fonts',
             'integrations',
-            'colors'
+            'colors',
+            'locales'
           ],
           requiredKeys: const [
             'output',
@@ -99,6 +100,8 @@ FlutterGen _$FlutterGenFromJson(Map json) => $checkedCreate(
               'integrations', (v) => FlutterGenIntegrations.fromJson(v as Map)),
           colors: $checkedConvert(
               'colors', (v) => FlutterGenColors.fromJson(v as Map)),
+          locales: $checkedConvert(
+              'locales', (v) => FlutterGenLocales.fromJson(v as Map)),
         );
         return val;
       },
@@ -272,5 +275,48 @@ FlutterGenElementFontsOutputs _$FlutterGenElementFontsOutputsFromJson(
       fieldKeyMap: const {
         'className': 'class_name',
         'packageParameterEnabled': 'package_parameter_enabled'
+      },
+    );
+
+FlutterGenLocales _$FlutterGenLocalesFromJson(Map json) => $checkedCreate(
+      'FlutterGenLocales',
+      json,
+      ($checkedConvert) {
+        $checkKeys(
+          json,
+          allowedKeys: const ['enabled', 'folder', 'outputs'],
+          requiredKeys: const ['enabled', 'folder', 'outputs'],
+        );
+        final val = FlutterGenLocales(
+          enabled: $checkedConvert('enabled', (v) => v as bool),
+          folder: $checkedConvert('folder', (v) => v as String),
+          outputs: $checkedConvert('outputs',
+              (v) => FlutterGenElementLocalesOutputs.fromJson(v as Map)),
+        );
+        return val;
+      },
+    );
+
+FlutterGenElementLocalesOutputs _$FlutterGenElementLocalesOutputsFromJson(
+        Map json) =>
+    $checkedCreate(
+      'FlutterGenElementLocalesOutputs',
+      json,
+      ($checkedConvert) {
+        $checkKeys(
+          json,
+          allowedKeys: const ['translation_name', 'keys_name'],
+          requiredKeys: const ['translation_name', 'keys_name'],
+        );
+        final val = FlutterGenElementLocalesOutputs(
+          translationName:
+              $checkedConvert('translation_name', (v) => v as String),
+          keysName: $checkedConvert('keys_name', (v) => v as String),
+        );
+        return val;
+      },
+      fieldKeyMap: const {
+        'translationName': 'translation_name',
+        'keysName': 'keys_name'
       },
     );

@@ -60,6 +60,7 @@ class FlutterGen {
     required this.fonts,
     required this.integrations,
     required this.colors,
+    required this.locales,
   });
 
   factory FlutterGen.fromJson(Map json) => _$FlutterGenFromJson(json);
@@ -84,6 +85,9 @@ class FlutterGen {
 
   @JsonKey(name: 'colors', required: true)
   final FlutterGenColors colors;
+
+  @JsonKey(name: 'locales', required: false)
+  final FlutterGenLocales locales;
 }
 
 @JsonSerializable()
@@ -246,4 +250,41 @@ class FlutterGenElementFontsOutputs extends FlutterGenElementOutputs {
 
   @JsonKey(name: 'package_parameter_enabled', defaultValue: false)
   final bool packageParameterEnabled;
+}
+
+@JsonSerializable()
+class FlutterGenLocales {
+  const FlutterGenLocales({
+    required this.enabled,
+    required this.folder,
+    required this.outputs,
+  });
+
+  factory FlutterGenLocales.fromJson(Map json) =>
+      _$FlutterGenLocalesFromJson(json);
+
+  @JsonKey(name: 'enabled', required: true)
+  final bool enabled;
+
+  @JsonKey(name: 'folder', required: true)
+  final String folder;
+
+  @JsonKey(name: 'outputs', required: true)
+  final FlutterGenElementLocalesOutputs outputs;
+}
+
+@JsonSerializable()
+class FlutterGenElementLocalesOutputs {
+  const FlutterGenElementLocalesOutputs({
+    required this.translationName,
+    required this.keysName,
+  });
+
+  factory FlutterGenElementLocalesOutputs.fromJson(Map json) =>
+      _$FlutterGenElementLocalesOutputsFromJson(json);
+
+  @JsonKey(name: 'translation_name', required: true)
+  final String translationName;
+  @JsonKey(name: 'keys_name', required: true)
+  final String keysName;
 }

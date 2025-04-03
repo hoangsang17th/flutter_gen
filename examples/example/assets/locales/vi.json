@@ -1,0 +1,10 @@
+{
+  "Buttons": {
+    "Start": "Bắt đầu",
+    "login": "Đăng nhập",
+    "PasswordIncorrect": "Mật khẩu không đúng",
+    "logout": "Đăng xuất",
+    "Save": "Lưu",
+    "Create": "Tạo"
+  }
+}

@@ -49,6 +49,15 @@ flutter_gen:
     # Optional
     outputs:
       class_name: ColorName
+  locales:
+    # Optional
+    enabled: true
+    # Optional
+    folder: assets/locales
+    # Optional
+    outputs:
+      translation_name: AppTranslation
+      keys_name: LocalesKeys
 
 flutter:
   # See: https://flutter.dev/docs/development/ui/assets-and-images#specifying-assets

@@ -67,6 +67,12 @@ flutter_gen:
       - assets/color/colors.xml
       - assets/color/colors2.xml
       - assets/color/colors2.xml # duplicated
+  locales:
+    enabled: true
+    outputs:
+      translation_name: CoreTranslation
+      keys_name: AppKeys
+    folder: assets/locales
 
 flutter:
   uses-material-design: true
@@ -89,6 +95,7 @@ flutter:
     - assets/mix/
     - assets-extern/
     - pictures/chip5.jpg
+    - assets/locales/
 
     - path: assets/images/chip4/chip4.jpg
       flavors:
