@@ -23,7 +23,7 @@ dev_dependencies:
   flutter_gen_v2_runner:
     path: ../../packages/runner
 
-  lints: ^2.0.0
+  flutter_lints: ^4.0.0
   build_runner: ^2.0.0
 
 flutter_gen_v2:

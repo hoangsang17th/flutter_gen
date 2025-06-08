@@ -20,6 +20,6 @@ dependencies:
   args: ^2.0.0
 
 dev_dependencies:
-  lints: any # Ignoring the version to allow editing across SDK versions.
+  flutter_lints: ^4.0.0
   test: ^1.16.0
   test_process: ^2.0.0
