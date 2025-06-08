@@ -1,6 +1,6 @@
 name: test
 
-flutter_gen:
+flutter_gen_v2:
   output: lib/gen/
   line_length: 80
 

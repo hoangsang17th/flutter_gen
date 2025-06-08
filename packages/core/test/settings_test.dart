@@ -1,7 +1,7 @@
 import 'package:collection/collection.dart';
-import 'package:flutter_gen_core/settings/asset_type.dart';
-import 'package:flutter_gen_core/settings/flavored_asset.dart';
-import 'package:flutter_gen_core/settings/pubspec.dart';
+import 'package:flutter_gen_v2_core/settings/asset_type.dart';
+import 'package:flutter_gen_v2_core/settings/flavored_asset.dart';
+import 'package:flutter_gen_v2_core/settings/pubspec.dart';
 import 'package:test/test.dart';
 
 void main() {

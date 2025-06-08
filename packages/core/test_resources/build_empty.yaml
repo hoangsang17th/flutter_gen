@@ -3,5 +3,5 @@ name: test
 targets:
   $default:
     builders:
-      flutter_gen_runner:
+      flutter_gen_v2_runner:
         options:

@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:flutter_gen_core/settings/config_default.dart';
-import 'package:flutter_gen_core/settings/pubspec.dart';
-import 'package:flutter_gen_core/utils/error.dart';
-import 'package:flutter_gen_core/utils/map.dart';
-import 'package:flutter_gen_core/version.gen.dart';
+import 'package:flutter_gen_v2_core/settings/config_default.dart';
+import 'package:flutter_gen_v2_core/settings/pubspec.dart';
+import 'package:flutter_gen_v2_core/utils/error.dart';
+import 'package:flutter_gen_v2_core/utils/map.dart';
+import 'package:flutter_gen_v2_core/version.gen.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
@@ -39,8 +39,8 @@ Config loadPubspecConfig(File pubspecFile, {File? buildFile}) {
     final buildContent = file.readAsStringSync();
     final rawMap = loadYaml(buildContent) as Map?;
     final builders = rawMap?['targets']?[r'$default']?['builders'];
-    final optionBuildMap = (builders?['flutter_gen_runner'] ??
-        builders?['flutter_gen'])?['options'];
+    final optionBuildMap = (builders?['flutter_gen_v2_runner'] ??
+        builders?['flutter_gen_v2'])?['options'];
     if (optionBuildMap is YamlMap && optionBuildMap.isNotEmpty) {
       return optionBuildMap;
     }
@@ -57,7 +57,7 @@ Config loadPubspecConfig(File pubspecFile, {File? buildFile}) {
     if (buildFile.existsSync()) {
       final optionBuildMap = getBuildFileOptions(buildFile);
       if (optionBuildMap != null) {
-        final buildMap = {'flutter_gen': optionBuildMap};
+        final buildMap = {'flutter_gen_v2': optionBuildMap};
         mergedMap = mergeMap([mergedMap, buildMap]);
         final buildLocaleHint = normalize(
           join(basename(buildFile.parent.path), basename(buildFile.path)),

@@ -1,6 +1,6 @@
 name: example
 
-flutter_gen:
+flutter_gen_v2:
   output:
   line_length: 80
 

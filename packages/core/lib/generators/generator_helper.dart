@@ -1,5 +1,5 @@
 import 'package:collection/collection.dart';
-import 'package:flutter_gen_core/settings/import.dart';
+import 'package:flutter_gen_v2_core/settings/import.dart';
 
 String get header {
   return '''/// GENERATED CODE - DO NOT MODIFY BY HAND
@@ -65,7 +65,7 @@ String sBuildDeprecation(
     url,
     '',
     '```yaml',
-    'flutter_gen:',
+    'flutter_gen_v2:',
     ...migration,
     '```',
   ];

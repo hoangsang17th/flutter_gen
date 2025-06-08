@@ -1,12 +1,12 @@
 targets:
   $default:
     builders:
-      flutter_gen_runner:
+      flutter_gen_v2_runner:
         enabled: true
 
 builders:
-  flutter_gen_runner:
-    import: 'package:flutter_gen_runner/flutter_gen_runner.dart'
+  flutter_gen_v2_runner:
+    import: 'package:flutter_gen_v2_runner/flutter_gen_v2_runner.dart'
     builder_factories: ['build']
     build_extensions: { '$package$': ['.gen.dart'] }
     auto_apply: dependents

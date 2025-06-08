@@ -1,4 +1,4 @@
-name: flutter_gen_repository
+name: flutter_gen_v2_repository
 
 environment:
   sdk: ^3.0.0

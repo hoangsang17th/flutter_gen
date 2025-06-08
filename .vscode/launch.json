@@ -14,12 +14,14 @@
       "program": "${workspaceFolder}/examples/example/.dart_tool/build/entrypoint/build.dart",
       "request": "launch",
       "type": "dart",
-      "args": ["build"],
+      "args": [
+        "build"
+      ],
       "cwd": "examples/example/"
     },
     {
-      "name": "Run on flutter_gen_command",
-      "program": "${workspaceFolder}/packages/command/bin/flutter_gen_command.dart",
+      "name": "Run on flutter_gen_v2_command",
+      "program": "${workspaceFolder}/packages/command/bin/flutter_gen_v2_command.dart",
       "request": "launch",
       "type": "dart",
       "cwd": "examples/example/"

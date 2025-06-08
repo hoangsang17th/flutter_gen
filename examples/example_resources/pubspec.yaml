@@ -15,12 +15,12 @@ dependencies:
   rive: ^0.11.0
 
 dev_dependencies:
-  flutter_gen_runner:
+  flutter_gen_v2_runner:
     path: ../../packages/runner
 
   build_runner: ^2.0.0
 
-flutter_gen:
+flutter_gen_v2:
   output: lib/gen/
   line_length: 80
 

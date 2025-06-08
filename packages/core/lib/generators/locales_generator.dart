@@ -4,9 +4,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_style/dart_style.dart';
-import 'package:flutter_gen_core/generators/generator_helper.dart';
-import 'package:flutter_gen_core/settings/pubspec.dart';
-import 'package:flutter_gen_core/utils/error.dart';
+import 'package:flutter_gen_v2_core/generators/generator_helper.dart';
+import 'package:flutter_gen_v2_core/settings/pubspec.dart';
+import 'package:flutter_gen_v2_core/utils/error.dart';
 import 'package:path/path.dart';
 
 Future<String> generateLocales(
@@ -16,7 +16,7 @@ Future<String> generateLocales(
 ) async {
   if (config.folder.isEmpty) {
     throw const InvalidSettingsException(
-      'The value of "flutter_gen/locales:" is incorrect.',
+      'The value of "flutter_gen_v2/locales:" is incorrect.',
     );
   }
   final files = await Directory(config.folder)

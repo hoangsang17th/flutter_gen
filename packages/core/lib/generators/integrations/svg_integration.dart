@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter_gen_core/generators/integrations/integration.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/integration.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart';
 
 class SvgIntegration extends Integration {

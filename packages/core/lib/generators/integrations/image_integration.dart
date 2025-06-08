@@ -1,4 +1,4 @@
-import 'package:flutter_gen_core/generators/integrations/integration.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/integration.dart';
 
 /// The main image integration, supporting all image asset types. See
 /// [isSupport] for the exact supported mime types.

@@ -1,17 +1,17 @@
 <p align="center">
-  <a href="https://pub.dev/packages/flutter_gen">
-    <img src="https://github.com/FlutterGen/flutter_gen/raw/main/art/logo.png" width="480px" alt="Logo"/>
+  <a href="https://pub.dev/packages/flutter_gen_v2_v2_v2">
+    <img src="https://github.com/FlutterGen/flutter_gen_v2_v2_v2/raw/main/art/logo.png" width="480px" alt="Logo"/>
   </a>
 </p>
 <p align="center">
-  <a href="https://pub.dartlang.org/packages/flutter_gen">
-    <img src="https://img.shields.io/pub/v/flutter_gen.svg" alt="Pub">
+  <a href="https://pub.dartlang.org/packages/flutter_gen_v2_v2_v2">
+    <img src="https://img.shields.io/pub/v/flutter_gen_v2_v2_v2.svg" alt="Pub">
   </a>
-  <a href="https://github.com/FlutterGen/flutter_gen/actions?query=workflow%3A%22Dart+CI%22">
-    <img src="https://github.com/FlutterGen/flutter_gen/workflows/Build/badge.svg" alt="Build Status"/>
+  <a href="https://github.com/FlutterGen/flutter_gen_v2_v2_v2/actions?query=workflow%3A%22Dart+CI%22">
+    <img src="https://github.com/FlutterGen/flutter_gen_v2_v2_v2/workflows/Build/badge.svg" alt="Build Status"/>
   </a>
-  <a href="https://codecov.io/gh/FlutterGen/flutter_gen">
-    <img src="https://codecov.io/gh/FlutterGen/flutter_gen/branch/main/graph/badge.svg" alt="Coverage"/>
+  <a href="https://codecov.io/gh/FlutterGen/flutter_gen_v2_v2_v2">
+    <img src="https://codecov.io/gh/FlutterGen/flutter_gen_v2_v2_v2/branch/main/graph/badge.svg" alt="Coverage"/>
   </a>
 </p>
 
@@ -60,7 +60,7 @@ Widget build(BuildContext context) {
    ```yaml
    dev_dependencies:
      build_runner:
-     flutter_gen_runner:
+     flutter_gen_v2_v2_v2_runner:
    ```
 
 2. Install [FlutterGen]
@@ -80,7 +80,7 @@ Widget build(BuildContext context) {
 Works with macOS, Linux and Windows.
 
 ```sh
-dart pub global activate flutter_gen
+dart pub global activate flutter_gen_v2_v2_v2
 ```
 
 You might need to [set up your path](https://dart.dev/tools/pub/cmd/pub-global#running-a-script-from-your-path).
@@ -134,14 +134,14 @@ fluttergen -c example/pubspec.yaml
 
 ## Configuration file
 
-[FlutterGen] generates dart files based on the key **`flutter`** and **`flutter_gen`** of [`pubspec.yaml`](https://dart.dev/tools/pub/pubspec).  
-Default configuration can be found [here](https://github.com/FlutterGen/flutter_gen/tree/main/packages/core/lib/settings/config_default.dart). 
+[FlutterGen] generates dart files based on the key **`flutter`** and **`flutter_gen_v2_v2_v2`** of [`pubspec.yaml`](https://dart.dev/tools/pub/pubspec).  
+Default configuration can be found [here](https://github.com/FlutterGen/flutter_gen_v2_v2_v2/tree/main/packages/core/lib/settings/config_default.dart).
 
 ```yaml
 # pubspec.yaml
 # ...
 
-flutter_gen:
+flutter_gen_v2_v2_v2:
   output: lib/gen/ # Optional (default: lib/gen/)
   line_length: 80 # Optional (default: 80)
 
@@ -173,7 +173,6 @@ flutter:
 
 You can also configure generate options in the `build.yaml`, it will be read before the `pubspec.yaml` if it exists.
 
-
 ```yaml
 # build.yaml
 # ...
@@ -181,7 +180,7 @@ You can also configure generate options in the `build.yaml`, it will be read bef
 targets:
   $default:
     builders:
-      flutter_gen_runner: # or flutter_gen
+      flutter_gen_v2_v2_v2_runner: # or flutter_gen_v2_v2_v2
         options: 
           output: lib/build_gen/ # Optional (default: lib/gen/)
           line_length: 120 # Optional (default: 80)
@@ -219,7 +218,7 @@ These configurations will generate **`assets.gen.dart`** under the **`lib/gen/`*
 Flutter supports
 [Conditionally bundling assets based on flavor](https://docs.flutter.dev/deployment/flavors#conditionally-bundling-assets-based-on-flavor).
 Assets are only available with flavors if specified.
-`flutter_gen` will generate the specified `flavors` for assets regardless the current flavor.
+`flutter_gen_v2_v2_v2` will generate the specified `flavors` for assets regardless the current flavor.
 The `flavors` field accessible though `.flavors`, for example:
 
 ```dart
@@ -228,10 +227,10 @@ print(MyAssets.images.chip4.flavors); // -> {'extern'}
 
 #### Excluding generating for assets
 
-You can specify `flutter_gen > assets > exclude` using `Glob` patterns to exclude particular assets.
+You can specify `flutter_gen_v2_v2_v2 > assets > exclude` using `Glob` patterns to exclude particular assets.
 
 ```yaml
-flutter_gen:
+flutter_gen_v2_v2_v2:
   assets:
     exclude:
       - folder-your-want-to-exclude/**
@@ -243,10 +242,10 @@ See more patterns with the `package:glob`.
 #### Generate for packages
 
 If you want to generate assets for a package,
-use `package_parameter_enabled` under `flutter_gen > assets > outputs`.
+use `package_parameter_enabled` under `flutter_gen_v2_v2_v2 > assets > outputs`.
 
 ```yaml
-flutter_gen:
+flutter_gen_v2_v2_v2:
   assets:
     outputs:
       package_parameter_enabled: true # <- Add this line.
@@ -276,7 +275,9 @@ Widget build(BuildContext context) {
   );
 }
 ```
+
 or
+
 ```dart
 // Explicit usage for `Image`/`SvgPicture`/`Lottie`.
 Widget build(BuildContext context) {
@@ -292,10 +293,10 @@ Widget build(BuildContext context) {
 #### Generate directories path
 
 If you want to generate the path of directories,
-use `directory_path_enabled` under `flutter_gen > assets > outputs`.
+use `directory_path_enabled` under `flutter_gen_v2_v2_v2 > assets > outputs`.
 
 ```yaml
-flutter_gen:
+flutter_gen_v2_v2_v2:
   assets:
     outputs:
       directory_path_enabled: true # <- Add this line.
@@ -320,7 +321,7 @@ At build time, additional metadata may be included in the generated class, by us
 `parse_metadata` option.
 
 ```yaml
-flutter_gen:
+flutter_gen_v2_v2_v2:
   parse_metadata: true # <- Add this line (default: false)
 ```
 
@@ -371,11 +372,11 @@ Widget build(BuildContext context) {
 
 ```
 
-If you do not want to generate `AssetGenImage`, set `flutter_gen > integrations > image` to `false`.
+If you do not want to generate `AssetGenImage`, set `flutter_gen_v2_v2_v2 > integrations > image` to `false`.
 
 ```yaml
 # pubspec.yaml
-flutter_gen:
+flutter_gen_v2_v2_v2:
   integrations:
     image: false
 ```
@@ -384,7 +385,7 @@ If you are using SVG images with [flutter_svg](https://pub.dev/packages/flutter_
 
 ```yaml
 # pubspec.yaml
-flutter_gen:
+flutter_gen_v2_v2_v2:
   integrations:
     flutter_svg: true
 
@@ -425,7 +426,7 @@ final json = await rootBundle.loadString(Assets.json.fruits);
 
 ```yaml
 # pubspec.yaml
-flutter_gen:
+flutter_gen_v2_v2_v2:
   assets:
     outputs: 
       # Assets.imagesChip
@@ -453,7 +454,7 @@ assets/json/fruits.json           => Assets.json.fruits
 pictures/ocean_view.jpg           => Assets.pictures.oceanView
 ```
 
-[Example of code generated by FlutterGen](https://github.com/FlutterGen/flutter_gen/blob/main/examples/example/lib/gen/assets.gen.dart)
+[Example of code generated by FlutterGen](https://github.com/FlutterGen/flutter_gen_v2_v2_v2/blob/main/examples/example/lib/gen/assets.gen.dart)
 
 ### Fonts
 
@@ -482,10 +483,10 @@ These configurations will generate **`fonts.gen.dart`** under the **`lib/gen/`**
 #### Generate for packages
 
 If you want to generate fonts for a package,
-use `package_parameter_enabled` under `flutter_gen > fonts > outputs`.
+use `package_parameter_enabled` under `flutter_gen_v2_v2_v2 > fonts > outputs`.
 
 ```yaml
-flutter_gen:
+flutter_gen_v2_v2_v2:
   fonts:
     outputs:
       package_parameter_enabled: true # <- Add this line.
@@ -516,7 +517,7 @@ Text(
 )
 ```
 
-[Example of code generated by FlutterGen](https://github.com/FlutterGen/flutter_gen/tree/main/examples/example/lib/gen/fonts.gen.dart)
+[Example of code generated by FlutterGen](https://github.com/FlutterGen/flutter_gen_v2_v2_v2/tree/main/examples/example/lib/gen/fonts.gen.dart)
 
 ### Colors
 
@@ -525,7 +526,7 @@ _Ignore duplicated._
 
 ```yaml
 # pubspec.yaml
-flutter_gen:
+flutter_gen_v2_v2_v2:
   colors:
     inputs:
       - assets/color/colors.xml
@@ -560,7 +561,7 @@ Text(
   ),
 ```
 
-[Example of code generated by FlutterGen](https://github.com/FlutterGen/flutter_gen/tree/main/examples/example/lib/gen/colors.gen.dart)
+[Example of code generated by FlutterGen](https://github.com/FlutterGen/flutter_gen_v2_v2_v2/tree/main/examples/example/lib/gen/colors.gen.dart)
 
 ## Credits
 
@@ -568,16 +569,18 @@ The material color generation implementation is based on [mcg](https://github.co
 
 ## Issues
 
-Please file [FlutterGen] specific issues, bugs, or feature requests in our [issue tracker](https://github.com/FlutterGen/flutter_gen/issues/new).
+Please file [FlutterGen] specific issues, bugs, or feature requests in our [issue tracker](https://github.com/FlutterGen/flutter_gen_v2_v2_v2/issues/new).
 
 Plugin issues that are not specific to [FlutterGen] can be filed in the [Flutter issue tracker](https://github.com/flutter/flutter/issues/new).
 
 ### Known Issues
 
 #### Bad State: No Element when using build_runner
+
 If you get an error message like this:
+
 ```
-[SEVERE] flutter_gen_runner:flutter_gen_runner on $package$:
+[SEVERE] flutter_gen_v2_v2_v2_runner:flutter_gen_v2_v2_v2_runner on $package$:
 
 Bad state: No element
 [SEVERE] Failed after 16.0s
@@ -614,15 +617,15 @@ output-localization-file: app_localizations.dart
 synthetic-package: false <--- ⚠️Add this line⚠️
 ```
 
-If you get 
+If you get
 
 ## Contributing
 
 **We are looking for co-developers.**
 
 If you wish to contribute a change to any of the existing plugins in this repo,
-please review our [contribution guide](https://github.com/FlutterGen/flutter_gen/blob/master/CONTRIBUTING.md)
-and open a [pull request](https://github.com/FlutterGen/flutter_gen/pulls).
+please review our [contribution guide](https://github.com/FlutterGen/flutter_gen_v2_v2_v2/blob/master/CONTRIBUTING.md)
+and open a [pull request](https://github.com/FlutterGen/flutter_gen_v2_v2_v2/pulls).
 
 [build_runner]: https://pub.dev/packages/build_runner
-[fluttergen]: https://pub.dev/packages/flutter_gen
+[fluttergen]: https://pub.dev/packages/flutter_gen_v2_v2_v2

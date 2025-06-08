@@ -1,7 +1,7 @@
 const configDefaultYamlContent = '''
 name: UNKNOWN
 
-flutter_gen:
+flutter_gen_v2:
   # Optional
   output: lib/gen/
   # Optional

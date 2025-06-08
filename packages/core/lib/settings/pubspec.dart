@@ -17,7 +17,7 @@ class Pubspec {
   @JsonKey(name: 'name', required: true)
   final String packageName;
 
-  @JsonKey(name: 'flutter_gen', required: true)
+  @JsonKey(name: 'flutter_gen_v2', required: true)
   final FlutterGen flutterGen;
 
   @JsonKey(name: 'flutter', required: true)

@@ -4,17 +4,17 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:dartx/dartx.dart' hide IterableSorted;
-import 'package:flutter_gen_core/generators/generator_helper.dart';
-import 'package:flutter_gen_core/generators/integrations/image_integration.dart';
-import 'package:flutter_gen_core/generators/integrations/integration.dart';
-import 'package:flutter_gen_core/generators/integrations/lottie_integration.dart';
-import 'package:flutter_gen_core/generators/integrations/rive_integration.dart';
-import 'package:flutter_gen_core/generators/integrations/svg_integration.dart';
-import 'package:flutter_gen_core/settings/config.dart';
-import 'package:flutter_gen_core/settings/flavored_asset.dart';
-import 'package:flutter_gen_core/settings/pubspec.dart';
-import 'package:flutter_gen_core/utils/error.dart';
-import 'package:flutter_gen_core/utils/string.dart';
+import 'package:flutter_gen_v2_core/generators/generator_helper.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/image_integration.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/integration.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/lottie_integration.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/rive_integration.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/svg_integration.dart';
+import 'package:flutter_gen_v2_core/settings/config.dart';
+import 'package:flutter_gen_v2_core/settings/flavored_asset.dart';
+import 'package:flutter_gen_v2_core/settings/pubspec.dart';
+import 'package:flutter_gen_v2_core/utils/error.dart';
+import 'package:flutter_gen_v2_core/utils/string.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
@@ -91,7 +91,7 @@ Future<String> generateAssets(
           'style',
           'asset',
           'asset.output',
-          'https://github.com/FlutterGen/flutter_gen/pull/294',
+          'https://github.com/FlutterGen/flutter_gen_v2/pull/294',
           [
             '  assets:',
             '    outputs:',
@@ -106,7 +106,7 @@ Future<String> generateAssets(
           'package_parameter_enabled',
           'asset',
           'asset.output',
-          'https://github.com/FlutterGen/flutter_gen/pull/294',
+          'https://github.com/FlutterGen/flutter_gen_v2/pull/294',
           [
             '  assets:',
             '    outputs:',
@@ -169,7 +169,7 @@ List<FlavoredAsset> _getAssetRelativePathList(
   /// section in the pubspec.yaml.
   List<Object> assets,
 
-  /// List of globs as provided the `flutter_gen -> assets -> exclude`
+  /// List of globs as provided the `flutter_gen_v2 -> assets -> exclude`
   /// section in the pubspec.yaml.
   List<Glob> excludes,
 ) {

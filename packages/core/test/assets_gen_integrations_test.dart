@@ -1,7 +1,7 @@
-import 'package:flutter_gen_core/generators/integrations/integration.dart';
-import 'package:flutter_gen_core/generators/integrations/lottie_integration.dart';
-import 'package:flutter_gen_core/generators/integrations/rive_integration.dart';
-import 'package:flutter_gen_core/generators/integrations/svg_integration.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/integration.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/lottie_integration.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/rive_integration.dart';
+import 'package:flutter_gen_v2_core/generators/integrations/svg_integration.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

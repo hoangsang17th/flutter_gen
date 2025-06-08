@@ -1,6 +1,6 @@
 import 'dart:io' show Platform;
 
-import 'package:flutter_gen_core/version.gen.dart';
+import 'package:flutter_gen_v2_core/version.gen.dart';
 import 'package:test/test.dart';
 import 'package:test_process/test_process.dart';
 
@@ -10,7 +10,7 @@ void main() {
   test('Execute fluttergen', () async {
     final process = await TestProcess.start(
       'dart',
-      ['bin/flutter_gen_command.dart'],
+      ['bin/flutter_gen_v2_command.dart'],
     );
     expect(
       await process.stdout.next,
@@ -22,7 +22,7 @@ void main() {
   test('Execute fluttergen --config pubspec.yaml', () async {
     var process = await TestProcess.start(
       'dart',
-      ['bin/flutter_gen_command.dart', '--config', 'pubspec.yaml'],
+      ['bin/flutter_gen_v2_command.dart', '--config', 'pubspec.yaml'],
     );
     expect(
       await process.stdout.next,
@@ -34,7 +34,7 @@ void main() {
   test('Execute fluttergen --help', () async {
     var process = await TestProcess.start(
       'dart',
-      ['bin/flutter_gen_command.dart', '--help'],
+      ['bin/flutter_gen_v2_command.dart', '--help'],
     );
     expect(
       await process.stdout.next,
@@ -48,7 +48,7 @@ void main() {
   test('Execute fluttergen --version', () async {
     var process = await TestProcess.start(
       'dart',
-      ['bin/flutter_gen_command.dart', '--version'],
+      ['bin/flutter_gen_v2_command.dart', '--version'],
     );
     expect(await process.stdout.next, equals('[FlutterGen] v$packageVersion'));
     await process.shouldExit(0);
@@ -57,7 +57,7 @@ void main() {
   test('Execute wrong arguments with fluttergen --wrong', () async {
     var process = await TestProcess.start(
       'dart',
-      ['bin/flutter_gen_command.dart', '--wrong'],
+      ['bin/flutter_gen_v2_command.dart', '--wrong'],
     );
     expect(
       await process.stderr.next,
@@ -65,7 +65,7 @@ void main() {
     );
     expect(
       await process.stderr.next,
-      equals('usage: flutter_gen [options...]'),
+      equals('usage: flutter_gen_v2 [options...]'),
     );
     await process.shouldExit(0);
   });
@@ -74,7 +74,7 @@ void main() {
     final process = await TestProcess.start(
       'dart',
       [
-        'bin/flutter_gen_command.dart',
+        'bin/flutter_gen_v2_command.dart',
         '--config',
         'test/deprecated_configs.yaml',
       ],
