@@ -12,7 +12,7 @@ environment:
   sdk: ^3.0.0
 
 executables:
-  fluttergen: flutter_gen_v2_command
+  flutter_gen_v2: flutter_gen_command
 
 dependencies:
   flutter_gen_v2_core:

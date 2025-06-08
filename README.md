@@ -629,3 +629,4 @@ and open a [pull request](https://github.com/FlutterGen/flutter_gen_v2_v2_v2/pul
 
 [build_runner]: https://pub.dev/packages/build_runner
 [fluttergen]: https://pub.dev/packages/flutter_gen_v2_v2_v2
+dart pub global activate --source path packages/command
