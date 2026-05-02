@@ -1,8 +1,28 @@
-name: flutter_gen_v2_repository
+name: finvoras_gen_root
+publish_to: none
 
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.6.0
+
+workspace:
+  - packages/command
+  - packages/core
+  - packages/runner
+
+melos:
+  scripts:
+    format:
+      run: dart format --set-exit-if-changed .
+      description: dart format --set-exit-if-changed .
+    gen:build_runner:
+      exec: dart run build_runner build --delete-conflicting-outputs
+      packageFilters:
+        ignore:
+          - example
+          - example_resources
+        dependsOn: build_runner
+      description: dart run build_runner build --delete-conflicting-outputs
 
 dev_dependencies:
   flutter_lints: ^4.0.0
-  melos: ^6.0.0
+  melos: ^7.5.1

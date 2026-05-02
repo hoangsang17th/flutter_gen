@@ -42,7 +42,7 @@ jobs:
       - name: Get dependencies
         run: |
           dart pub global activate melos
-          melos bootstrap
+          dart pub get
 
       - name: Running build
         run: |

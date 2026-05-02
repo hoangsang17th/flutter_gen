@@ -20,8 +20,8 @@
       "cwd": "examples/example/"
     },
     {
-      "name": "Run on flutter_gen_v2_command",
-      "program": "${workspaceFolder}/packages/command/bin/flutter_gen_v2_command.dart",
+      "name": "Run on finvoras_gen_command",
+      "program": "${workspaceFolder}/packages/command/bin/finvoras_gen_command.dart",
       "request": "launch",
       "type": "dart",
       "cwd": "examples/example/"

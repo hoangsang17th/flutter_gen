@@ -35,19 +35,19 @@ jobs:
       - name: Get dependencies
         run: |
           dart pub global activate melos
-          melos bootstrap
+          dart pub get
 
       - name: Run tests for Dart packages
         if: startsWith(matrix.os, 'ubuntu')
-        run: melos test:dart --no-select
+        run: dart test --concurrency=1
 
       - name: Run tests for Flutter packages
         if: startsWith(matrix.os, 'ubuntu')
-        run: melos test:flutter --no-select
+        run: flutter test --concurrency=1
 
       - name: Run coverage
         if: startsWith(matrix.os, 'ubuntu')
-        run: melos coverage
+        run: bash ./scripts/coverage.sh packages/core
 
       - uses: codecov/codecov-action@v5
         with:
@@ -55,11 +55,9 @@ jobs:
           files: ./packages/core/coverage.lcov
 
       - name: Generate example
-        run: |
-          melos run gen:examples:command --no-select
-          melos run gen:examples:build_runner --no-select
+        run: melos run gen:build_runner --no-select
 
       - name: Check for any formatting and statically analyze the code.
         run: |
           melos format
-          melos analyze
+          flutter analyze
