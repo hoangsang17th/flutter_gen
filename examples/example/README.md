@@ -1,10 +1,10 @@
 # example
 
-A sample project using FlutterGen.
+A sample project using FinvorasGen.
 
 ## Getting Started
 
 ```
-cd ../flutter_gen_v2
+cd ../finvoras_gen
 melos bootstrap
 ```

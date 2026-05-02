@@ -64,7 +64,7 @@ class FlutterGenerator {
       final colorsPath =
           normalize(join(pubspecFile.parent.path, output, colorsName));
       writer(generated, colorsPath);
-      stdout.writeln('[FlutterGen] Generated: $colorsPath');
+      stdout.writeln('[FinvorasGen] Generated: $colorsPath');
     }
 
     if (flutterGen.locales.enabled && flutterGen.locales.folder.isNotEmpty) {
@@ -76,7 +76,7 @@ class FlutterGenerator {
       final localesPath =
           normalize(join(pubspecFile.parent.path, output, localesName));
       writer(generated, localesPath);
-      stdout.writeln('[FlutterGen] Generated: $localesPath');
+      stdout.writeln('[FinvorasGen] Generated: $localesPath');
     }
 
     if (flutterGen.assets.enabled && flutter.assets.isNotEmpty) {
@@ -87,7 +87,7 @@ class FlutterGenerator {
       final assetsPath =
           normalize(join(pubspecFile.parent.path, output, assetsName));
       writer(generated, assetsPath);
-      stdout.writeln('[FlutterGen] Generated: $assetsPath');
+      stdout.writeln('[FinvorasGen] Generated: $assetsPath');
     }
 
     if (flutterGen.fonts.enabled && flutter.fonts.isNotEmpty) {
@@ -98,9 +98,9 @@ class FlutterGenerator {
       final fontsPath =
           normalize(join(pubspecFile.parent.path, output, fontsName));
       writer(generated, fontsPath);
-      stdout.writeln('[FlutterGen] Generated: $fontsPath');
+      stdout.writeln('[FinvorasGen] Generated: $fontsPath');
     }
 
-    stdout.writeln('[FlutterGen] Finished generating.');
+    stdout.writeln('[FinvorasGen] Finished generating.');
   }
 }

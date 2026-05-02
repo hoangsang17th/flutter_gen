@@ -1,4 +1,4 @@
-# Contributing to FlutterGen
+# Contributing to FinvorasGen
 
 _See also: [Contributor Covenant Code of Conduct](https://github.com/FlutterGen/flutter_gen_v2/blob/main/CODE_OF_CONDUCT.md)_
 
@@ -22,12 +22,12 @@ Once installed & setup, Melos needs to be bootstrapped. Bootstrapping has 2 prim
 $ melos bootstrap
 ```
 
-## Running the FlutterGen
+## Running FinvorasGen
 
 #### Use as Dart command
 To run `pub get` to make sure its dependencies have been downloaded, and use `dart command`.
 ```sh
-$ dart packages/command/bin/flutter_gen_v2_command.dart --config example/pubspec.yaml
+$ dart packages/command/bin/flutter_gen_command.dart --config example/pubspec.yaml
 ```
 
 Or melos

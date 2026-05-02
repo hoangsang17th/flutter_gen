@@ -18,7 +18,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: What version of our software are you running? ($ fluttergen -v)
+      description: What version of our software are you running? ($ finvoras_gen -v)
       placeholder: ex. 5.0.0
     validations:
       required: false

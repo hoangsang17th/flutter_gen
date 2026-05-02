@@ -31,7 +31,7 @@ void main(List<String> args) async {
   parser.addFlag(
     'version',
     abbr: 'v',
-    help: 'FlutterGen version',
+    help: 'FinvorasGen version',
     defaultsTo: false,
   );
 
@@ -42,12 +42,12 @@ void main(List<String> args) async {
       stdout.writeln(parser.usage);
       return;
     } else if (results.wasParsed('version')) {
-      stdout.writeln('[FlutterGen] v$packageVersion');
+      stdout.writeln('[FinvorasGen] v$packageVersion');
       return;
     }
   } on FormatException catch (e) {
     stderr.writeAll(
-      <String>[e.message, 'usage: flutter_gen_v2 [options...]', ''],
+      <String>[e.message, 'usage: finvoras_gen [options...]', ''],
       '\n',
     );
     return;

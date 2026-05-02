@@ -20,7 +20,7 @@ Config loadPubspecConfig(File pubspecFile, {File? buildFile}) {
     join(basename(pubspecFile.parent.path), basename(pubspecFile.path)),
   );
 
-  stdout.writeln('[FlutterGen] v$packageVersion Loading ...');
+  stdout.writeln('[FinvorasGen] v$packageVersion Loading ...');
 
   final defaultMap = loadYaml(configDefaultYamlContent) as Map?;
 
@@ -29,7 +29,7 @@ Config loadPubspecConfig(File pubspecFile, {File? buildFile}) {
 
   var mergedMap = mergeMap([defaultMap, pubspecMap]);
   stdout.writeln(
-    '[FlutterGen] Reading options from $pubspecLocaleHint',
+    '[FinvorasGen] Reading options from $pubspecLocaleHint',
   );
 
   YamlMap? getBuildFileOptions(File file) {
@@ -63,17 +63,17 @@ Config loadPubspecConfig(File pubspecFile, {File? buildFile}) {
           join(basename(buildFile.parent.path), basename(buildFile.path)),
         );
         stdout.writeln(
-          '[FlutterGen] Reading options from $buildLocaleHint',
+          '[FinvorasGen] Reading options from $buildLocaleHint',
         );
       } else {
         stderr.writeln(
-          '[FlutterGen] Specified ${buildFile.path} as input but the file '
+          '[FinvorasGen] Specified ${buildFile.path} as input but the file '
           'does not contain valid options, ignoring...',
         );
       }
     } else {
       stderr.writeln(
-        '[FlutterGen] Specified ${buildFile.path} as input but the file '
+        '[FinvorasGen] Specified ${buildFile.path} as input but the file '
         'does not exists.',
       );
     }

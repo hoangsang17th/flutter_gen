@@ -7,34 +7,34 @@ import 'package:test_process/test_process.dart';
 final separator = Platform.pathSeparator;
 
 void main() {
-  test('Execute fluttergen', () async {
+  test('Execute finvoras_gen', () async {
     final process = await TestProcess.start(
       'dart',
-      ['bin/flutter_gen_v2_command.dart'],
+      ['bin/flutter_gen_command.dart'],
     );
     expect(
       await process.stdout.next,
-      equals('[FlutterGen] v$packageVersion Loading ...'),
+      equals('[FinvorasGen] v$packageVersion Loading ...'),
     );
     await process.shouldExit(0);
   });
 
-  test('Execute fluttergen --config pubspec.yaml', () async {
+  test('Execute finvoras_gen --config pubspec.yaml', () async {
     var process = await TestProcess.start(
       'dart',
-      ['bin/flutter_gen_v2_command.dart', '--config', 'pubspec.yaml'],
+      ['bin/flutter_gen_command.dart', '--config', 'pubspec.yaml'],
     );
     expect(
       await process.stdout.next,
-      equals('[FlutterGen] v$packageVersion Loading ...'),
+      equals('[FinvorasGen] v$packageVersion Loading ...'),
     );
     await process.shouldExit(0);
   });
 
-  test('Execute fluttergen --help', () async {
+  test('Execute finvoras_gen --help', () async {
     var process = await TestProcess.start(
       'dart',
-      ['bin/flutter_gen_v2_command.dart', '--help'],
+      ['bin/flutter_gen_command.dart', '--help'],
     );
     expect(
       await process.stdout.next,
@@ -45,19 +45,19 @@ void main() {
     await process.shouldExit(0);
   });
 
-  test('Execute fluttergen --version', () async {
+  test('Execute finvoras_gen --version', () async {
     var process = await TestProcess.start(
       'dart',
-      ['bin/flutter_gen_v2_command.dart', '--version'],
+      ['bin/flutter_gen_command.dart', '--version'],
     );
-    expect(await process.stdout.next, equals('[FlutterGen] v$packageVersion'));
+    expect(await process.stdout.next, equals('[FinvorasGen] v$packageVersion'));
     await process.shouldExit(0);
   });
 
-  test('Execute wrong arguments with fluttergen --wrong', () async {
+  test('Execute wrong arguments with finvoras_gen --wrong', () async {
     var process = await TestProcess.start(
       'dart',
-      ['bin/flutter_gen_v2_command.dart', '--wrong'],
+      ['bin/flutter_gen_command.dart', '--wrong'],
     );
     expect(
       await process.stderr.next,
@@ -65,16 +65,16 @@ void main() {
     );
     expect(
       await process.stderr.next,
-      equals('usage: flutter_gen_v2 [options...]'),
+      equals('usage: finvoras_gen [options...]'),
     );
     await process.shouldExit(0);
   });
 
-  test('Execute deprecated config with fluttergen', () async {
+  test('Execute deprecated config with finvoras_gen', () async {
     final process = await TestProcess.start(
       'dart',
       [
-        'bin/flutter_gen_v2_command.dart',
+        'bin/flutter_gen_command.dart',
         '--config',
         'test/deprecated_configs.yaml',
       ],
