@@ -38,9 +38,17 @@ Sử dụng hàng ngày để tạo các class Assets type-safe.
 # Mặc định (sử dụng pubspec.yaml)
 finvoras_gen assets
 
-# Custom config
-finvoras_gen assets -c pubspec.yaml
+### 3. Refresh Project (`refresh`)
+Sử dụng khi bạn cần dọn dẹp và lấy lại dependencies (rất hữu ích khi vừa đổi branch hoặc bị lỗi cache).
+
+```sh
+finvoras_gen refresh
 ```
+
+**Các bước thực hiện:**
+
+- Chạy `flutter clean` để dọn dẹp build cache.
+- Chạy `flutter pub get` để lấy lại toàn bộ dependencies.
 
 ## 📝 Cấu hình `pubspec.yaml`
 
