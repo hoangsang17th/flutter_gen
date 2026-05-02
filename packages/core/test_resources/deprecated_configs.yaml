@@ -4,7 +4,7 @@ flutter:
   assets:
     - assets/
 
-flutter_gen_v2:
+finvoras_gen:
   assets:
     enabled: true
     style: snake-case

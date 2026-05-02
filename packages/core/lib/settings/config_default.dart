@@ -1,7 +1,7 @@
 const configDefaultYamlContent = '''
 name: UNKNOWN
 
-flutter_gen_v2:
+finvoras_gen:
   # Optional
   output: lib/gen/
   # Optional

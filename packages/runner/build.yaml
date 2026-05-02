@@ -1,12 +1,12 @@
 targets:
   $default:
     builders:
-      flutter_gen_v2_runner:
+      finvoras_gen_runner:
         enabled: true
 
 builders:
-  flutter_gen_v2_runner:
-    import: 'package:flutter_gen_v2_runner/flutter_gen_v2_runner.dart'
+  finvoras_gen_runner:
+    import: 'package:finvoras_gen_runner/finvoras_gen_runner.dart'
     builder_factories: ['build']
     build_extensions: { '$package$': ['.gen.dart'] }
     auto_apply: dependents

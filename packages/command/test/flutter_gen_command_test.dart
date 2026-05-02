@@ -1,6 +1,6 @@
 import 'dart:io' show Platform;
 
-import 'package:flutter_gen_v2_core/version.gen.dart';
+import 'package:finvoras_gen_core/version.gen.dart';
 import 'package:test/test.dart';
 import 'package:test_process/test_process.dart';
 

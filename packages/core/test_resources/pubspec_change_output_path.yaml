@@ -1,6 +1,6 @@
 name: test
 
-flutter_gen_v2:
+finvoras_gen:
   output: lib/aaa/bbb/ccc # Optional (default: lib/gen/)
 
   colors:

@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:flutter_gen_v2_core/flutter_generator.dart';
-import 'package:flutter_gen_v2_core/utils/cast.dart';
-import 'package:flutter_gen_v2_core/utils/error.dart';
-import 'package:flutter_gen_v2_core/version.gen.dart';
+import 'package:finvoras_gen_core/flutter_generator.dart';
+import 'package:finvoras_gen_core/utils/cast.dart';
+import 'package:finvoras_gen_core/utils/error.dart';
+import 'package:finvoras_gen_core/version.gen.dart';
 
 void main(List<String> args) async {
   final parser = ArgParser();

@@ -1,6 +1,6 @@
 name: example
 
-flutter_gen_v2:
+finvoras_gen:
   output: lib/gen/
   line_length: aaaa
 

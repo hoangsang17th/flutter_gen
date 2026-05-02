@@ -1,21 +1,18 @@
-name: flutter_gen_v2
+name: finvoras_gen
 description: The Flutter code generator for your assets, fonts, colors, … — Get rid of all String-based APIs.
-version: 5.10.0
-homepage: https://github.com/FlutterGen/flutter_gen_v2
-repository: https://github.com/FlutterGen/flutter_gen_v2
-documentation: https://github.com/FlutterGen/flutter_gen_v2
-issue_tracker: https://github.com/FlutterGen/flutter_gen_v2/issues
-
+version: 1.2.1
 publish_to: none
 
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.6.0
+
+resolution: workspace
 
 executables:
   finvoras_gen: flutter_gen_command
 
 dependencies:
-  flutter_gen_v2_core:
+  finvoras_gen_core:
     path: ../core
   args: ^2.0.0
 
