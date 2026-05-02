@@ -37,7 +37,7 @@ class FlutterGenBuilder extends Builder {
     if (_config == null) {
       return;
     }
-    final state = await _createState(_config!, buildStep);
+    final state = await _createState(_config, buildStep);
     if (state.shouldSkipGenerate(_currentState)) {
       return;
     }
@@ -56,7 +56,7 @@ class FlutterGenBuilder extends Builder {
     if (_config == null) {
       return {};
     }
-    final output = _config!.pubspec.flutterGen.output;
+    final output = _config.pubspec.flutterGen.output;
     return {
       r'$package$': [
         for (final name in [
@@ -83,14 +83,14 @@ class FlutterGenBuilder extends Builder {
         String assetInput;
         if (asset is YamlMap) {
           flavored = FlavoredAsset(
-            path: asset['path'],
+            path: (asset['path'] as String).trim(),
             flavors:
                 (asset['flavors'] as YamlList?)?.toSet().cast() ?? <String>{},
           );
-          assetInput = asset['path'];
+          assetInput = (asset['path'] as String).trim();
         } else {
-          flavored = FlavoredAsset(path: asset as String);
-          assetInput = asset;
+          assetInput = (asset as String).trim();
+          flavored = FlavoredAsset(path: assetInput);
         }
         if (assetInput.isEmpty) {
           continue;

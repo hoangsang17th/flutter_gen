@@ -19,7 +19,11 @@ Future<String> generateLocales(
       'The value of "finvoras_gen/locales:" is incorrect.',
     );
   }
-  final files = await Directory(config.folder)
+  final localeDirectory = Directory(join(pubspecFile.parent.path, config.folder));
+  if (!localeDirectory.existsSync()) {
+    return '';
+  }
+  final files = await localeDirectory
       .list(recursive: false)
       .where((entry) => entry.path.endsWith('.json'))
       .toList();

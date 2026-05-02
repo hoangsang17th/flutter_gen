@@ -73,10 +73,16 @@ class FlutterGenerator {
         flutterGen.locales,
         formatter,
       );
+      if (generated.isEmpty) {
+        stdout.writeln(
+          '[FinvorasGen] Skipped locales: folder not found (${flutterGen.locales.folder})',
+        );
+      } else {
       final localesPath =
           normalize(join(pubspecFile.parent.path, output, localesName));
       writer(generated, localesPath);
       stdout.writeln('[FinvorasGen] Generated: $localesPath');
+      }
     }
 
     if (flutterGen.assets.enabled && flutter.assets.isNotEmpty) {
