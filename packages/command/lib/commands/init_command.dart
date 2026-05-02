@@ -2,15 +2,15 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 
 class InitCommand extends Command {
+  InitCommand() {
+    // Positional argument: app-id
+  }
   @override
   final name = 'init';
 
   @override
-  final description = 'Initialize a new Flutter project with flavors, vscode configs, and assets.';
-
-  InitCommand() {
-    // Positional argument: app-id
-  }
+  final description =
+      'Initialize a new Flutter project with flavors, vscode configs, and assets.';
 
   @override
   void run() async {
@@ -22,12 +22,17 @@ class InitCommand extends Command {
     final appId = argResults!.rest.first;
     final parts = appId.split('.');
     if (parts.length < 2) {
-      print('Invalid application ID. It should be in the format com.example.app');
+      print(
+        'Invalid application ID. It should be in the format com.example.app',
+      );
       return;
     }
 
     final appName = parts.last;
     final org = parts.sublist(0, parts.length - 1).join('.');
+
+    final splashPath = 'assets/images/logo.png';
+    final iconPath = 'assets/images/logo.png';
 
     print('🚀 Initializing project $appName ($appId)...');
 
@@ -50,7 +55,7 @@ class InitCommand extends Command {
     await _setupVSCodeLauncher(appName);
 
     // 4. Add configs for splash and icons
-    await _setupPubspecConfigs();
+    await _setupPubspecConfigs(splashPath, iconPath);
 
     // 5. Run pub get
     await _runCommand('flutter', ['pub', 'get']);
@@ -61,19 +66,19 @@ class InitCommand extends Command {
       'pub',
       'add',
       'dev:flutter_native_splash',
-      'dev:flutter_launcher_icons'
+      'dev:flutter_launcher_icons',
     ]);
 
-    final splashPath = 'assets/images/splash.png';
-    final iconPath = 'assets/images/icon.png';
-
-    bool hasAssets = File(splashPath).existsSync() && File(iconPath).existsSync();
+    bool hasAssets =
+        File(splashPath).existsSync() && File(iconPath).existsSync();
 
     if (!hasAssets) {
       print('\n⚠️  Logo images not found at $splashPath or $iconPath');
       print('👉 Please add your logo files to the "assets/images/" directory.');
-      stdout.write('⌨️  Press [Enter] to run generation, or [s] to skip this step: ');
-      
+      stdout.write(
+        '⌨️  Press [Enter] to run generation, or [s] to skip this step: ',
+      );
+
       final input = stdin.readLineSync();
       if (input?.toLowerCase() == 's') {
         print('⏭️  Skipping splash and icon generation.');
@@ -98,7 +103,7 @@ class InitCommand extends Command {
       'clone',
       '--recurse-submodules',
       'https://github.com/hoangsang17th/packages',
-      'packages'
+      'packages',
     ]);
 
     // 8. Link submodule packages
@@ -142,7 +147,6 @@ void main() {
   }
 
   Future<void> _setupVSCodeLauncher(String appName) async {
-
     final vscodeDir = Directory('.vscode');
     if (!await vscodeDir.exists()) {
       await vscodeDir.create();
@@ -181,13 +185,14 @@ void main() {
     print('Created .vscode/launch.json');
   }
 
-  Future<void> _setupPubspecConfigs() async {
+  Future<void> _setupPubspecConfigs(
+    String splashPath,
+    String iconPath,
+  ) async {
     final pubspecFile = File('pubspec.yaml');
     if (!await pubspecFile.exists()) return;
 
-    var content = await pubspecFile.readAsString();
-
-    // Add common packages
+    // Add common packages FIRST so they are written to disk
     await _runCommand('flutter', [
       'pub',
       'add',
@@ -196,17 +201,20 @@ void main() {
       'equatable',
       'dev:build_runner',
       'dev:json_serializable',
-      'dev:injectable_generator'
+      'dev:injectable_generator',
     ]);
+
+    // NOW read the updated content
+    var content = await pubspecFile.readAsString();
 
     // Append splash, icon and finvoras_gen configs if they don't exist
     if (!content.contains('flutter_native_splash:')) {
       content += '''
 \nflutter_native_splash:
   color: "#ffffff"
-  image: assets/images/splash.png
+  image: $splashPath
   android_12:
-    image: assets/images/splash.png
+    image: $splashPath
     color: "#ffffff"
 ''';
     }
@@ -216,7 +224,7 @@ void main() {
 \nflutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/icon.png"
+  image_path: "$iconPath"
 ''';
     }
 
@@ -252,7 +260,7 @@ void main() {
     final assetsDir = Directory('assets/images');
     if (!await assetsDir.exists()) {
       await assetsDir.create(recursive: true);
-      print('Created assets/images directory (Please add splash.png and icon.png)');
+      print('Created assets/images directory (Please add logo.png)');
     }
 
     final localesDir = Directory('assets/locales');
@@ -297,15 +305,29 @@ packages:
     print('🔗 Linking local packages: ${localPackages.join(', ')}...');
     var content = await pubspecFile.readAsString();
     
-    final StringBuffer dependenciesBlock = StringBuffer('\ndependencies:\n');
+    final StringBuffer dependenciesBlock = StringBuffer();
     for (final pkg in localPackages) {
+      // Add indentation since it will be injected under `dependencies:`
       dependenciesBlock.writeln('  $pkg:');
       dependenciesBlock.writeln('    path: packages/$pkg');
     }
 
-    // This is a simple append, in a real app you'd want to use a YAML parser
-    // to add to the existing dependencies section.
-    content += dependenciesBlock.toString();
+    if (content.contains('\ndependencies:')) {
+      content = content.replaceFirst(
+        '\ndependencies:', 
+        '\ndependencies:\n${dependenciesBlock.toString().trimRight()}'
+      );
+    } else {
+      content += '\ndependencies:\n${dependenciesBlock.toString()}';
+    }
+
+    // Add Dart Workspace configuration
+    final StringBuffer workspaceBlock = StringBuffer('\nworkspace:\n');
+    for (final pkg in localPackages) {
+      workspaceBlock.writeln('  - packages/$pkg');
+    }
+    content += workspaceBlock.toString();
+
     await pubspecFile.writeAsString(content);
   }
 
