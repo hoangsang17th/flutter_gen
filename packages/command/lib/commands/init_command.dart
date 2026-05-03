@@ -54,13 +54,28 @@ class InitCommand extends Command {
 
     await _setupVSCodeLauncher(appName);
 
-    // 4. Add configs for splash and icons
+    // 4. Clone submodule
+    print('\n📦 Cloning packages submodule...');
+    await _runCommand('git', [
+      'clone',
+      '--recurse-submodules',
+      'https://github.com/hoangsang17th/packages',
+      'packages',
+    ]);
+
+    // 5. Link submodule packages
+    await _linkSubmodulePackages();
+
+    // 6. Setup Melos
+    await _setupMelosConfig(appName);
+
+    // 7. Add configs for splash and icons (this does flutter pub add)
     await _setupPubspecConfigs(splashPath, iconPath);
 
-    // 5. Run pub get
+    // 8. Run pub get
     await _runCommand('flutter', ['pub', 'get']);
 
-    // 6. Run splash and icon gen
+    // 9. Run splash and icon gen
     print('\n🎨 Preparing splash screen and launcher icons...');
     await _runCommand('flutter', [
       'pub',
@@ -96,21 +111,6 @@ class InitCommand extends Command {
     } else {
       await _runGenCommands();
     }
-
-    // 7. Clone submodule
-    print('\n📦 Cloning packages submodule...');
-    await _runCommand('git', [
-      'clone',
-      '--recurse-submodules',
-      'https://github.com/hoangsang17th/packages',
-      'packages',
-    ]);
-
-    // 8. Link submodule packages
-    await _linkSubmodulePackages();
-
-    // 9. Setup Melos
-    await _setupMelosConfig(appName);
 
     print('✅ Project initialized successfully!');
   }
@@ -161,22 +161,22 @@ void main() {
       "name": "App (dev)",
       "request": "launch",
       "type": "dart",
-      "program": "lib/main.dart",
-      "args": ["--flavor", "dev", "--target", "lib/main_dev.dart"]
+      "program": "lib/main_dev.dart",
+      "args": ["--dart-define=FLAVOR=dev"]
     },
     {
       "name": "App (qa)",
       "request": "launch",
       "type": "dart",
-      "program": "lib/main.dart",
-      "args": ["--flavor", "qa", "--target", "lib/main_qa.dart"]
+      "program": "lib/main_qa.dart",
+      "args": ["--dart-define=FLAVOR=qa"]
     },
     {
       "name": "App (prod)",
       "request": "launch",
       "type": "dart",
-      "program": "lib/main.dart",
-      "args": ["--flavor", "prod", "--target", "lib/main_prod.dart"]
+      "program": "lib/main_prod.dart",
+      "args": ["--dart-define=FLAVOR=prod"]
     }
   ]
 }
