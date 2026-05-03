@@ -13,6 +13,12 @@ class BrandingCommand extends BaseCommand {
       defaultsTo: 'behavior',
       allowed: ['behavior', 'platform'],
     );
+    argParser.addOption(
+      'envs',
+      abbr: 'e',
+      help: 'Comma-separated list of environments (flavors)',
+      defaultsTo: 'dev,qa,prod',
+    );
   }
 
   @override
@@ -31,6 +37,15 @@ class BrandingCommand extends BaseCommand {
       print(e);
       print('\n💡 Please check the errors above and try again.');
     }
+  }
+
+  List<String> get _environments {
+    final envs = argResults?['envs'] as String? ?? 'dev,qa,prod';
+    return envs
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
   }
 
   Future<void> _execute() async {
@@ -89,14 +104,13 @@ class BrandingCommand extends BaseCommand {
     final content = await pubspecFile.readAsString();
     final editor = YamlEditor(content);
 
-    final behaviors = ['dev', 'qa', 'prod'];
+    final behaviors = _environments;
     final Map<String, dynamic> flavors = {};
 
     for (final behavior in behaviors) {
       String currentAppId = appId;
-      if (type == 'platform') {
-        if (behavior == 'dev') currentAppId = '$appId.dev';
-        if (behavior == 'qa') currentAppId = '$appId.qa';
+      if (type == 'platform' && behavior != 'prod') {
+        currentAppId = '$appId.$behavior';
       }
 
       flavors[behavior] = {
@@ -116,7 +130,7 @@ class BrandingCommand extends BaseCommand {
   }
 
   Future<void> _setupBrandingConfigs() async {
-    final behaviors = ['dev', 'qa', 'prod'];
+    final behaviors = _environments;
     final logoPath = 'assets/images/logo.png';
 
     for (final behavior in behaviors) {
@@ -198,7 +212,7 @@ flutter_launcher_icons:
     await runCommand('dart', ['run', 'flutter_native_splash:create', '--all-flavors']);
     
     // Icons (run for each flavor)
-    final behaviors = ['dev', 'qa', 'prod'];
+    final behaviors = _environments;
     for (final behavior in behaviors) {
       print('📦 Generating icons for $behavior...');
       await runCommand('dart', [

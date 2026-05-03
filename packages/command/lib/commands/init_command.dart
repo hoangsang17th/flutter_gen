@@ -23,8 +23,9 @@ class InitCommand extends BaseCommand {
   }
 
   Future<void> _execute() async {
+    // 1. Check arguments
     if (argResults?.rest.isEmpty ?? true) {
-      print('Please provide an application ID (e.g., com.example.app)');
+      print('❌ Error: Please provide an application ID (e.g., com.example.app)');
       return;
     }
 
@@ -32,7 +33,7 @@ class InitCommand extends BaseCommand {
     final parts = appId.split('.');
     if (parts.length < 2) {
       print(
-        'Invalid application ID. It should be in the format com.example.app',
+        '❌ Error: Invalid application ID. It should be in the format com.example.app',
       );
       return;
     }
@@ -40,9 +41,21 @@ class InitCommand extends BaseCommand {
     final appName = parts.last;
     final org = parts.sublist(0, parts.length - 1).join('.');
 
+    // 2. Pre-flight checks
+    final packagesDir = Directory('packages');
+    if (packagesDir.existsSync()) {
+      print('⚠️  Warning: "packages" directory already exists.');
+      stdout.write('👉 Do you want to continue? (y/n): ');
+      final input = stdin.readLineSync();
+      if (input?.toLowerCase() != 'y') {
+        print('⏭️  Initialization aborted.');
+        return;
+      }
+    }
+
     print('🚀 Initializing project $appName ($appId)...');
 
-    // 1. Create new app
+    // 3. Create new app
     await runCommand('flutter', [
       'create',
       '--org',
@@ -52,9 +65,8 @@ class InitCommand extends BaseCommand {
       '.',
     ]);
 
-    // 2. Clone submodule
+    // 4. Clone submodule
     print('\n📦 Cloning packages submodule...');
-    final packagesDir = Directory('packages');
     if (packagesDir.existsSync()) {
       print('⚠️  "packages" directory already exists. Skipping clone.');
     } else {
@@ -75,16 +87,19 @@ class InitCommand extends BaseCommand {
       }
     }
 
-    // 3. Link submodule packages
+    // 5. Link submodule packages
     await _linkSubmodulePackages();
 
-    // 4. Setup Melos
+    // 6. Setup Melos
     await _setupMelosConfig(appName);
 
-    // 5. Setup Pubspec (Core packages and finvoras_gen)
+    // 7. Setup Pubspec (Core packages and finvoras_gen)
     await _setupPubspecConfigs(appId);
 
-    // 6. Run pub get
+    // 8. Setup iOS Podfile
+    await _setupIosPodfile();
+
+    // 9. Run pub get
     await runCommand('flutter', ['pub', 'get']);
 
     print('\n✅ Project initialized successfully!');
@@ -222,5 +237,33 @@ packages:
     }
 
     await pubspecFile.writeAsString(editor.toString());
+  }
+
+  Future<void> _setupIosPodfile() async {
+    final podfile = File('ios/Podfile');
+    if (!await podfile.exists()) {
+      return;
+    }
+
+    print('📱 Setting iOS platform to 15.0 in Podfile...');
+    final content = await podfile.readAsString();
+
+    // Regex to find and replace platform :ios, '...'
+    // It might be commented out like # platform :ios, '9.0'
+    final platformRegex = RegExp(
+        r'''^\s*#?\s*platform\s+:ios,\s+['"][^'"]+['"]''',
+        multiLine: true);
+
+    if (platformRegex.hasMatch(content)) {
+      final newContent =
+          content.replaceFirst(platformRegex, "platform :ios, '15.0'");
+      await podfile.writeAsString(newContent);
+      print('✅ Updated ios/Podfile platform to 15.0');
+    } else {
+      // If not found, prepend it
+      final newContent = "platform :ios, '15.0'\n$content";
+      await podfile.writeAsString(newContent);
+      print('✅ Added platform :ios, 15.0 to ios/Podfile');
+    }
   }
 }
