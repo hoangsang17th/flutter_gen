@@ -82,7 +82,7 @@ class InitCommand extends BaseCommand {
     await _setupMelosConfig(appName);
 
     // 5. Setup Pubspec (Core packages and finvoras_gen)
-    await _setupPubspecConfigs();
+    await _setupPubspecConfigs(appId);
 
     // 6. Run pub get
     await runCommand('flutter', ['pub', 'get']);
@@ -91,7 +91,7 @@ class InitCommand extends BaseCommand {
     print('💡 Next step: Run "finvoras_gen branding" to setup flavors and icons.');
   }
 
-  Future<void> _setupPubspecConfigs() async {
+  Future<void> _setupPubspecConfigs(String appId) async {
     final pubspecFile = File('pubspec.yaml');
     if (!await pubspecFile.exists()) {
       throw Exception(
@@ -124,6 +124,7 @@ class InitCommand extends BaseCommand {
     }
 
     ensureConfig(['finvoras_gen'], {
+      'app_id': appId,
       'output': 'lib/generated/',
       'line_length': 80,
       'assets': {
