@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:finvoras_gen/commands/assets_command.dart';
 import 'package:finvoras_gen/commands/init_command.dart';
+import 'package:finvoras_gen/commands/branding_command.dart';
 import 'package:finvoras_gen/commands/refresh_command.dart';
 import 'package:finvoras_gen_core/version.gen.dart';
 
@@ -9,6 +10,7 @@ void main(List<String> args) async {
   final runner = CommandRunner('finvoras_gen', 'FinvorasGen CLI tool')
     ..addCommand(AssetsCommand())
     ..addCommand(InitCommand())
+    ..addCommand(BrandingCommand())
     ..addCommand(RefreshCommand());
 
   runner.argParser.addFlag(
