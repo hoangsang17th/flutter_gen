@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
+import 'package:yaml_edit/yaml_edit.dart';
+import 'package:yaml/yaml.dart';
 
 class InitCommand extends Command {
   InitCommand() {
@@ -13,7 +15,17 @@ class InitCommand extends Command {
       'Initialize a new Flutter project with flavors, vscode configs, and assets.';
 
   @override
-  void run() async {
+  Future<void> run() async {
+    try {
+      await _execute();
+    } catch (e) {
+      print('\n💥 Initialization failed!');
+      print(e);
+      print('\n💡 Please check the errors above and try again.');
+    }
+  }
+
+  Future<void> _execute() async {
     if (argResults?.rest.isEmpty ?? true) {
       print('Please provide an application ID (e.g., com.example.app)');
       return;
@@ -56,12 +68,25 @@ class InitCommand extends Command {
 
     // 4. Clone submodule
     print('\n📦 Cloning packages submodule...');
-    await _runCommand('git', [
-      'clone',
-      '--recurse-submodules',
-      'https://github.com/hoangsang17th/packages',
-      'packages',
-    ]);
+    final packagesDir = Directory('packages');
+    if (packagesDir.existsSync()) {
+      print('⚠️  "packages" directory already exists. Skipping clone.');
+    } else {
+      try {
+        await _runCommand('git', [
+          'clone',
+          '--recurse-submodules',
+          'https://github.com/hoangsang17th/packages',
+          'packages',
+        ]);
+      } catch (e) {
+        print('❌ Failed to clone submodule.');
+        print('👉 This might be due to network issues or missing permissions.');
+        print('👉 You can try cloning it manually later:');
+        print('   git clone --recurse-submodules https://github.com/hoangsang17th/packages packages');
+        rethrow;
+      }
+    }
 
     // 5. Link submodule packages
     await _linkSubmodulePackages();
@@ -112,22 +137,54 @@ class InitCommand extends Command {
       await _runGenCommands();
     }
 
-    print('✅ Project initialized successfully!');
+    print('\n✅ Project initialized successfully!');
   }
 
-  Future<void> _runCommand(String command, List<String> arguments) async {
+  Future<void> _runCommand(
+    String command,
+    List<String> arguments, {
+    bool throwOnError = true,
+  }) async {
     print('Executing: $command ${arguments.join(' ')}');
-    final result = await Process.run(command, arguments);
-    if (result.exitCode != 0) {
-      print('Error executing $command: ${result.stderr}');
-    } else {
-      print(result.stdout);
+    try {
+      final result = await Process.run(command, arguments);
+      final output = result.stdout.toString().trim();
+      final error = result.stderr.toString().trim();
+
+      if (result.exitCode != 0) {
+        final errorMessage = StringBuffer();
+        errorMessage.writeln('❌ Error executing $command (exit code ${result.exitCode})');
+        if (output.isNotEmpty) {
+          errorMessage.writeln('STDOUT:\n$output');
+        }
+        if (error.isNotEmpty) {
+          errorMessage.writeln('STDERR:\n$error');
+        }
+        
+        final msg = errorMessage.toString().trim();
+        print(msg);
+        if (throwOnError) {
+          throw Exception(msg);
+        }
+      } else {
+        if (output.isNotEmpty) {
+          print(output);
+        }
+      }
+    } catch (e) {
+      final errorMessage = '❌ Failed to start $command: $e';
+      print(errorMessage);
+      if (throwOnError) {
+        rethrow;
+      }
     }
   }
 
   Future<void> _createFlavorMainFiles(String appName) async {
     final libDir = Directory('lib');
-    if (!await libDir.exists()) return;
+    if (!await libDir.exists()) {
+      throw Exception('❌ "lib" directory not found. "flutter create" might have failed silently.');
+    }
 
     final flavors = ['dev', 'qa', 'prod'];
     for (final flavor in flavors) {
@@ -190,7 +247,9 @@ void main() {
     String iconPath,
   ) async {
     final pubspecFile = File('pubspec.yaml');
-    if (!await pubspecFile.exists()) return;
+    if (!await pubspecFile.exists()) {
+      throw Exception('❌ "pubspec.yaml" not found. "flutter create" might have failed silently.');
+    }
 
     // Add common packages FIRST so they are written to disk
     await _runCommand('flutter', [
@@ -205,55 +264,59 @@ void main() {
     ]);
 
     // NOW read the updated content
-    var content = await pubspecFile.readAsString();
+    final content = await pubspecFile.readAsString();
+    final editor = YamlEditor(content);
 
-    // Append splash, icon and finvoras_gen configs if they don't exist
-    if (!content.contains('flutter_native_splash:')) {
-      content += '''
-\nflutter_native_splash:
-  color: "#ffffff"
-  image: $splashPath
-  android_12:
-    image: $splashPath
-    color: "#ffffff"
-''';
+    // Helper to safely check and add config if missing
+    void ensureConfig(List<String> path, dynamic value) {
+      try {
+        editor.parseAt(path);
+      } catch (e) {
+        // Key doesn't exist, add it
+        editor.update(path, value);
+      }
     }
 
-    if (!content.contains('flutter_launcher_icons:')) {
-      content += '''
-\nflutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "$iconPath"
-''';
-    }
+    ensureConfig(['flutter_native_splash'], {
+      'color': '#ffffff',
+      'image': splashPath,
+      'android_12': {
+        'image': splashPath,
+        'color': '#ffffff',
+      },
+    });
 
-    if (!content.contains('finvoras_gen:')) {
-      content += '''
-\nfinvoras_gen:
-  output: lib/generated/
-  line_length: 80
-  
-  assets:
-    enabled: true
-    outputs:
-      class_name: AppAssets
-      package_parameter_enabled: false
+    ensureConfig(['flutter_launcher_icons'], {
+      'android': 'launcher_icon',
+      'ios': true,
+      'image_path': iconPath,
+    });
 
-  locales:
-    enabled: true
-    folder: assets/locales
-    outputs:
-      translation_name: AppTranslation
-      keys_name: AppLocalesKeys
+    ensureConfig(['finvoras_gen'], {
+      'output': 'lib/generated/',
+      'line_length': 80,
+      'assets': {
+        'enabled': true,
+        'outputs': {
+          'class_name': 'AppAssets',
+          'package_parameter_enabled': false,
+        },
+      },
+      'locales': {
+        'enabled': true,
+        'folder': 'assets/locales',
+        'outputs': {
+          'translation_name': 'AppTranslation',
+          'keys_name': 'AppLocalesKeys',
+        },
+      },
+      'integrations': {
+        'flutter_svg': true,
+        'lottie': true,
+      },
+    });
 
-  integrations:
-    flutter_svg: true
-    lottie: true
-''';
-    }
-
-    await pubspecFile.writeAsString(content);
+    await pubspecFile.writeAsString(editor.toString());
     print('Updated pubspec.yaml with extra configs and packages');
 
     // Create placeholder assets if they don't exist
@@ -284,11 +347,15 @@ packages:
 
   Future<void> _linkSubmodulePackages() async {
     final packagesDir = Directory('packages');
-    if (!await packagesDir.exists()) return;
+    if (!await packagesDir.exists()) {
+      throw Exception('❌ "packages" directory not found. "git clone" might have failed.');
+    }
 
     final pubspecFile = File('pubspec.yaml');
-    if (!await pubspecFile.exists()) return;
-
+    if (!await pubspecFile.exists()) {
+      throw Exception('❌ "pubspec.yaml" not found.');
+    }
+    
     final List<String> localPackages = [];
     await for (final entity in packagesDir.list()) {
       if (entity is Directory) {
@@ -303,32 +370,34 @@ packages:
     if (localPackages.isEmpty) return;
 
     print('🔗 Linking local packages: ${localPackages.join(', ')}...');
-    var content = await pubspecFile.readAsString();
-    
-    final StringBuffer dependenciesBlock = StringBuffer();
-    for (final pkg in localPackages) {
-      // Add indentation since it will be injected under `dependencies:`
-      dependenciesBlock.writeln('  $pkg:');
-      dependenciesBlock.writeln('    path: packages/$pkg');
-    }
+    final content = await pubspecFile.readAsString();
+    final editor = YamlEditor(content);
 
-    if (content.contains('\ndependencies:')) {
-      content = content.replaceFirst(
-        '\ndependencies:', 
-        '\ndependencies:\n${dependenciesBlock.toString().trimRight()}'
-      );
-    } else {
-      content += '\ndependencies:\n${dependenciesBlock.toString()}';
+    for (final pkg in localPackages) {
+      editor.update(['dependencies', pkg], {
+        'path': 'packages/$pkg',
+      });
     }
 
     // Add Dart Workspace configuration
-    final StringBuffer workspaceBlock = StringBuffer('\nworkspace:\n');
-    for (final pkg in localPackages) {
-      workspaceBlock.writeln('  - packages/$pkg');
+    try {
+      final YamlNode? workspaceNode = editor.parseAt(['workspace']);
+      final List workspaceList = 
+          workspaceNode is YamlList ? workspaceNode.value.toList() : [];
+      
+      for (final pkg in localPackages) {
+        final path = 'packages/$pkg';
+        if (!workspaceList.contains(path)) {
+          workspaceList.add(path);
+        }
+      }
+      editor.update(['workspace'], workspaceList);
+    } catch (e) {
+      // workspace key doesn't exist
+      editor.update(['workspace'], localPackages.map((pkg) => 'packages/$pkg').toList());
     }
-    content += workspaceBlock.toString();
 
-    await pubspecFile.writeAsString(content);
+    await pubspecFile.writeAsString(editor.toString());
   }
 
   Future<void> _runGenCommands() async {
