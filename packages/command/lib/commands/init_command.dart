@@ -1,18 +1,15 @@
 import 'dart:io';
-import 'package:args/command_runner.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 import 'package:yaml/yaml.dart';
+import 'base_command.dart';
 
-class InitCommand extends Command {
-  InitCommand() {
-    // Positional argument: app-id
-  }
+class InitCommand extends BaseCommand {
   @override
   final name = 'init';
 
   @override
   final description =
-      'Initialize a new Flutter project with flavors, vscode configs, and assets.';
+      'Initialize a new Flutter project with core packages and submodules.';
 
   @override
   Future<void> run() async {
@@ -43,13 +40,10 @@ class InitCommand extends Command {
     final appName = parts.last;
     final org = parts.sublist(0, parts.length - 1).join('.');
 
-    final splashPath = 'assets/images/logo.png';
-    final iconPath = 'assets/images/logo.png';
-
     print('🚀 Initializing project $appName ($appId)...');
 
     // 1. Create new app
-    await _runCommand('flutter', [
+    await runCommand('flutter', [
       'create',
       '--org',
       org,
@@ -58,22 +52,14 @@ class InitCommand extends Command {
       '.',
     ]);
 
-    // 2. Setup Flavors (Basic setup)
-    print('🛠 Setting up flavors (dev, qa, prod)...');
-    await _createFlavorMainFiles(appName);
-
-    // 3. Setup VSCode Launcher
-
-    await _setupVSCodeLauncher(appName);
-
-    // 4. Clone submodule
+    // 2. Clone submodule
     print('\n📦 Cloning packages submodule...');
     final packagesDir = Directory('packages');
     if (packagesDir.existsSync()) {
       print('⚠️  "packages" directory already exists. Skipping clone.');
     } else {
       try {
-        await _runCommand('git', [
+        await runCommand('git', [
           'clone',
           '--recurse-submodules',
           'https://github.com/hoangsang17th/packages',
@@ -83,176 +69,37 @@ class InitCommand extends Command {
         print('❌ Failed to clone submodule.');
         print('👉 This might be due to network issues or missing permissions.');
         print('👉 You can try cloning it manually later:');
-        print('   git clone --recurse-submodules https://github.com/hoangsang17th/packages packages');
+        print(
+            '   git clone --recurse-submodules https://github.com/hoangsang17th/packages packages');
         rethrow;
       }
     }
 
-    // 5. Link submodule packages
+    // 3. Link submodule packages
     await _linkSubmodulePackages();
 
-    // 6. Setup Melos
+    // 4. Setup Melos
     await _setupMelosConfig(appName);
 
-    // 7. Add configs for splash and icons (this does flutter pub add)
-    await _setupPubspecConfigs(splashPath, iconPath);
+    // 5. Setup Pubspec (Core packages and finvoras_gen)
+    await _setupPubspecConfigs();
 
-    // 8. Run pub get
-    await _runCommand('flutter', ['pub', 'get']);
-
-    // 9. Run splash and icon gen
-    print('\n🎨 Preparing splash screen and launcher icons...');
-    await _runCommand('flutter', [
-      'pub',
-      'add',
-      'dev:flutter_native_splash',
-      'dev:flutter_launcher_icons',
-    ]);
-
-    bool hasAssets =
-        File(splashPath).existsSync() && File(iconPath).existsSync();
-
-    if (!hasAssets) {
-      print('\n⚠️  Logo images not found at $splashPath or $iconPath');
-      print('👉 Please add your logo files to the "assets/images/" directory.');
-      stdout.write(
-        '⌨️  Press [Enter] to run generation, or [s] to skip this step: ',
-      );
-
-      final input = stdin.readLineSync();
-      if (input?.toLowerCase() == 's') {
-        print('⏭️  Skipping splash and icon generation.');
-      } else {
-        // Re-check
-        if (File(splashPath).existsSync() && File(iconPath).existsSync()) {
-          await _runGenCommands();
-        } else {
-          print('❌ Files still missing. Skipping generation to avoid errors.');
-          print('💡 You can run it later with:');
-          print('   dart run flutter_native_splash:create');
-          print('   dart run flutter_launcher_icons');
-        }
-      }
-    } else {
-      await _runGenCommands();
-    }
+    // 6. Run pub get
+    await runCommand('flutter', ['pub', 'get']);
 
     print('\n✅ Project initialized successfully!');
+    print('💡 Next step: Run "finvoras_gen branding" to setup flavors and icons.');
   }
 
-  Future<void> _runCommand(
-    String command,
-    List<String> arguments, {
-    bool throwOnError = true,
-  }) async {
-    print('Executing: $command ${arguments.join(' ')}');
-    try {
-      final result = await Process.run(command, arguments);
-      final output = result.stdout.toString().trim();
-      final error = result.stderr.toString().trim();
-
-      if (result.exitCode != 0) {
-        final errorMessage = StringBuffer();
-        errorMessage.writeln('❌ Error executing $command (exit code ${result.exitCode})');
-        if (output.isNotEmpty) {
-          errorMessage.writeln('STDOUT:\n$output');
-        }
-        if (error.isNotEmpty) {
-          errorMessage.writeln('STDERR:\n$error');
-        }
-        
-        final msg = errorMessage.toString().trim();
-        print(msg);
-        if (throwOnError) {
-          throw Exception(msg);
-        }
-      } else {
-        if (output.isNotEmpty) {
-          print(output);
-        }
-      }
-    } catch (e) {
-      final errorMessage = '❌ Failed to start $command: $e';
-      print(errorMessage);
-      if (throwOnError) {
-        rethrow;
-      }
-    }
-  }
-
-  Future<void> _createFlavorMainFiles(String appName) async {
-    final libDir = Directory('lib');
-    if (!await libDir.exists()) {
-      throw Exception('❌ "lib" directory not found. "flutter create" might have failed silently.');
-    }
-
-    final flavors = ['dev', 'qa', 'prod'];
-    for (final flavor in flavors) {
-      final file = File('lib/main_$flavor.dart');
-      final content = '''
-import 'package:flutter/material.dart';
-import 'main.dart' as app;
-
-void main() {
-  // TODO: Add $flavor specific configuration here
-  app.main();
-}
-''';
-      await file.writeAsString(content);
-      print('Created lib/main_$flavor.dart');
-    }
-  }
-
-  Future<void> _setupVSCodeLauncher(String appName) async {
-    final vscodeDir = Directory('.vscode');
-    if (!await vscodeDir.exists()) {
-      await vscodeDir.create();
-    }
-
-    final launchJson = File('.vscode/launch.json');
-    const content = r'''
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "App (dev)",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main_dev.dart",
-      "args": ["--dart-define=FLAVOR=dev"]
-    },
-    {
-      "name": "App (qa)",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main_qa.dart",
-      "args": ["--dart-define=FLAVOR=qa"]
-    },
-    {
-      "name": "App (prod)",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main_prod.dart",
-      "args": ["--dart-define=FLAVOR=prod"]
-    }
-  ]
-}
-''';
-    await launchJson.writeAsString(content);
-    print('Created .vscode/launch.json');
-  }
-
-  Future<void> _setupPubspecConfigs(
-    String splashPath,
-    String iconPath,
-  ) async {
+  Future<void> _setupPubspecConfigs() async {
     final pubspecFile = File('pubspec.yaml');
     if (!await pubspecFile.exists()) {
-      throw Exception('❌ "pubspec.yaml" not found. "flutter create" might have failed silently.');
+      throw Exception(
+          '❌ "pubspec.yaml" not found. "flutter create" might have failed silently.');
     }
 
-    // Add common packages FIRST so they are written to disk
-    await _runCommand('flutter', [
+    // Add common packages
+    await runCommand('flutter', [
       'pub',
       'add',
       'injectable',
@@ -272,25 +119,9 @@ void main() {
       try {
         editor.parseAt(path);
       } catch (e) {
-        // Key doesn't exist, add it
         editor.update(path, value);
       }
     }
-
-    ensureConfig(['flutter_native_splash'], {
-      'color': '#ffffff',
-      'image': splashPath,
-      'android_12': {
-        'image': splashPath,
-        'color': '#ffffff',
-      },
-    });
-
-    ensureConfig(['flutter_launcher_icons'], {
-      'android': 'launcher_icon',
-      'ios': true,
-      'image_path': iconPath,
-    });
 
     ensureConfig(['finvoras_gen'], {
       'output': 'lib/generated/',
@@ -317,20 +148,11 @@ void main() {
     });
 
     await pubspecFile.writeAsString(editor.toString());
-    print('Updated pubspec.yaml with extra configs and packages');
 
-    // Create placeholder assets if they don't exist
-    final assetsDir = Directory('assets/images');
-    if (!await assetsDir.exists()) {
-      await assetsDir.create(recursive: true);
-      print('Created assets/images directory (Please add logo.png)');
-    }
-
-    final localesDir = Directory('assets/locales');
-    if (!await localesDir.exists()) {
-      await localesDir.create(recursive: true);
-      print('Created assets/locales directory');
-    }
+    // Create placeholder directories
+    await Directory('assets/images').create(recursive: true);
+    await Directory('assets/locales').create(recursive: true);
+    print('Created assets/images and assets/locales directories');
   }
 
   Future<void> _setupMelosConfig(String appName) async {
@@ -348,14 +170,15 @@ packages:
   Future<void> _linkSubmodulePackages() async {
     final packagesDir = Directory('packages');
     if (!await packagesDir.exists()) {
-      throw Exception('❌ "packages" directory not found. "git clone" might have failed.');
+      throw Exception(
+          '❌ "packages" directory not found. "git clone" might have failed.');
     }
 
     final pubspecFile = File('pubspec.yaml');
     if (!await pubspecFile.exists()) {
       throw Exception('❌ "pubspec.yaml" not found.');
     }
-    
+
     final List<String> localPackages = [];
     await for (final entity in packagesDir.list()) {
       if (entity is Directory) {
@@ -381,10 +204,10 @@ packages:
 
     // Add Dart Workspace configuration
     try {
-      final YamlNode? workspaceNode = editor.parseAt(['workspace']);
-      final List workspaceList = 
-          workspaceNode is YamlList ? workspaceNode.value.toList() : [];
-      
+      final editorContent = editor.parseAt(['workspace']);
+      final List workspaceList =
+          editorContent is YamlList ? editorContent.value.toList() : [];
+
       for (final pkg in localPackages) {
         final path = 'packages/$pkg';
         if (!workspaceList.contains(path)) {
@@ -393,16 +216,10 @@ packages:
       }
       editor.update(['workspace'], workspaceList);
     } catch (e) {
-      // workspace key doesn't exist
-      editor.update(['workspace'], localPackages.map((pkg) => 'packages/$pkg').toList());
+      editor.update(
+          ['workspace'], localPackages.map((pkg) => 'packages/$pkg').toList());
     }
 
     await pubspecFile.writeAsString(editor.toString());
-  }
-
-  Future<void> _runGenCommands() async {
-    print('🎨 Generating resources...');
-    await _runCommand('dart', ['run', 'flutter_native_splash:create']);
-    await _runCommand('dart', ['run', 'flutter_launcher_icons']);
   }
 }
