@@ -3,6 +3,7 @@ import 'package:args/command_runner.dart';
 import 'package:finvoras_gen/commands/assets_command.dart';
 import 'package:finvoras_gen/commands/init_command.dart';
 import 'package:finvoras_gen/commands/branding_command.dart';
+import 'package:finvoras_gen/commands/prepare_command.dart';
 import 'package:finvoras_gen/commands/refresh_command.dart';
 import 'package:finvoras_gen/commands/version_command.dart';
 import 'package:finvoras_gen/src/version/version.gen.dart';
@@ -13,6 +14,7 @@ void main(List<String> args) async {
     ..addCommand(InitCommand())
     ..addCommand(BrandingCommand())
     ..addCommand(RefreshCommand())
+    ..addCommand(PrepareCommand())
     ..addCommand(VersionCommand());
 
   runner.argParser.addFlag(

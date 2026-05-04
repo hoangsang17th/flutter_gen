@@ -4,7 +4,7 @@ part 'pubspec.g.dart';
 
 // NOTE: Run `melos gen:build_runner` after editing this file
 
-@JsonSerializable(disallowUnrecognizedKeys: false)
+@JsonSerializable(disallowUnrecognizedKeys: false, anyMap: true)
 class Pubspec {
   const Pubspec({
     required this.packageName,
@@ -24,7 +24,7 @@ class Pubspec {
   final Flutter flutter;
 }
 
-@JsonSerializable(disallowUnrecognizedKeys: false)
+@JsonSerializable(disallowUnrecognizedKeys: false, anyMap: true)
 class Flutter {
   const Flutter({
     required this.assets,
@@ -40,7 +40,7 @@ class Flutter {
   final List<FlutterFonts> fonts;
 }
 
-@JsonSerializable(disallowUnrecognizedKeys: false)
+@JsonSerializable(disallowUnrecognizedKeys: false, anyMap: true)
 class FlutterFonts {
   const FlutterFonts({required this.family});
 
@@ -50,9 +50,10 @@ class FlutterFonts {
   final String family;
 }
 
-@JsonSerializable()
+@JsonSerializable(anyMap: true)
 class FlutterGen {
   const FlutterGen({
+    required this.appId,
     required this.output,
     required this.lineLength,
     required this.parseMetadata,
@@ -64,6 +65,9 @@ class FlutterGen {
   });
 
   factory FlutterGen.fromJson(Map json) => _$FlutterGenFromJson(json);
+
+  @JsonKey(name: 'app_id', required: false)
+  final String? appId;
 
   @JsonKey(name: 'output', required: true)
   final String output;
@@ -90,7 +94,7 @@ class FlutterGen {
   final FlutterGenLocales locales;
 }
 
-@JsonSerializable()
+@JsonSerializable(anyMap: true)
 class FlutterGenColors {
   const FlutterGenColors({
     required this.enabled,
@@ -111,7 +115,7 @@ class FlutterGenColors {
   final FlutterGenElementOutputs outputs;
 }
 
-@JsonSerializable()
+@JsonSerializable(anyMap: true)
 class FlutterGenAssets {
   const FlutterGenAssets({
     required this.enabled,
@@ -142,7 +146,7 @@ class FlutterGenAssets {
   final List<String> exclude;
 }
 
-@JsonSerializable()
+@JsonSerializable(anyMap: true)
 class FlutterGenFonts {
   const FlutterGenFonts({
     required this.enabled,
@@ -158,7 +162,7 @@ class FlutterGenFonts {
   final FlutterGenElementFontsOutputs outputs;
 }
 
-@JsonSerializable()
+@JsonSerializable(anyMap: true)
 class FlutterGenIntegrations {
   const FlutterGenIntegrations({
     required this.image,
@@ -183,7 +187,7 @@ class FlutterGenIntegrations {
   final bool lottie;
 }
 
-@JsonSerializable()
+@JsonSerializable(anyMap: true)
 class FlutterGenElementOutputs {
   const FlutterGenElementOutputs({
     required this.className,
@@ -216,7 +220,7 @@ enum FlutterGenElementAssetsOutputsStyle {
   String toJson() => name;
 }
 
-@JsonSerializable()
+@JsonSerializable(anyMap: true)
 class FlutterGenElementAssetsOutputs extends FlutterGenElementOutputs {
   const FlutterGenElementAssetsOutputs({
     required String className,
@@ -238,7 +242,7 @@ class FlutterGenElementAssetsOutputs extends FlutterGenElementOutputs {
   final FlutterGenElementAssetsOutputsStyle style;
 }
 
-@JsonSerializable()
+@JsonSerializable(anyMap: true)
 class FlutterGenElementFontsOutputs extends FlutterGenElementOutputs {
   const FlutterGenElementFontsOutputs({
     required super.className,
@@ -252,7 +256,7 @@ class FlutterGenElementFontsOutputs extends FlutterGenElementOutputs {
   final bool packageParameterEnabled;
 }
 
-@JsonSerializable()
+@JsonSerializable(anyMap: true)
 class FlutterGenLocales {
   const FlutterGenLocales({
     required this.enabled,
@@ -273,7 +277,7 @@ class FlutterGenLocales {
   final FlutterGenElementLocalesOutputs outputs;
 }
 
-@JsonSerializable()
+@JsonSerializable(anyMap: true)
 class FlutterGenElementLocalesOutputs {
   const FlutterGenElementLocalesOutputs({
     required this.translationName,
