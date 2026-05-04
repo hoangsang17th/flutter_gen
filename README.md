@@ -91,6 +91,39 @@ finvoras_gen branding --yes
 
 ---
 
+### `prepare` — Setup code, DI & localization
+
+Chuẩn bị cấu trúc code, thiết lập Dependency Injection, sinh file ngôn ngữ và cấu hình khởi tạo cho dự án.
+
+```sh
+# Mặc định: stack bloc + go_router
+finvoras_gen prepare
+
+# Chọn stack GetX
+finvoras_gen prepare --stack getx
+```
+
+**Options:**
+
+| Flag | Viết tắt | Mặc định | Mô tả |
+|---|---|---|---|
+| `--stack` | `-s` | `bloc` | Lựa chọn state management: `bloc` (kèm `go_router`) hoặc `getx` |
+
+**Các bước tự động thực hiện:**
+
+1. Tạo thư mục `assets/locales/` và file JSON mẫu: `en.json`, `vi.json`.
+2. Tạo `lib/src/di/injection.dart` (GetIt + Injectable).
+3. Tạo `lib/core/config/prepare.dart` chứa logic khởi tạo (Splash screen, System UI, DI, Services init...).
+4. Cập nhật `lib/main.dart`:
+   - Bao bọc ứng dụng bằng `AppOrchestrator`.
+   - Setup `MaterialApp.router` + `GoRouter` (nếu dùng bloc) hoặc `GetMaterialApp` (nếu dùng getx).
+5. Thêm dependencies cần thiết theo stack đã chọn.
+6. Chạy `flutter pub get`.
+7. Chạy `finvoras_gen assets` nội bộ để sinh code translation.
+8. Chạy `build_runner` để sinh code DI.
+
+---
+
 ### `assets` — Sinh code type-safe cho assets
 
 Sinh các class Dart type-safe từ cấu hình `finvoras_gen` trong `pubspec.yaml`.
