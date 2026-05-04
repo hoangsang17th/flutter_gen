@@ -45,9 +45,9 @@ class BrandingCommand extends BaseCommand {
 
   late final List<String> environments = _parseEnvs();
 
-  String get logoPath => argResults!['logo'];
-  bool get isCI => argResults!['yes'];
-  bool get isDryRun => argResults!['dry-run'];
+  String get logoPath => argResults!['logo'] as String;
+  bool get isCI => argResults!['yes'] as bool;
+  bool get isDryRun => argResults!['dry-run'] as bool;
 
   @override
   Future<void> run() async {
@@ -64,7 +64,7 @@ class BrandingCommand extends BaseCommand {
   // PARSE
   // ==============================
   List<String> _parseEnvs() {
-    final raw = argResults?['envs'] ?? 'dev,qa,prod';
+    final raw = argResults?['envs'] as String? ?? 'dev,qa,prod';
     return raw
         .split(',')
         .map((e) => e.trim())
@@ -264,7 +264,7 @@ flutter_launcher_icons:
         'run',
         'flutter_native_splash:create',
         '-f',
-        'flutter_native_splash-$env.yaml'
+        env,
       ]);
 
       // copy resource immediately (critical)
@@ -277,9 +277,15 @@ flutter_launcher_icons:
         'run',
         'flutter_launcher_icons',
         '-f',
-        'flutter_launcher_icons-$env.yaml'
+        'flutter_launcher_icons-$env.yaml',
       ]);
     }
+
+    if (type == 'platform') {
+      await projectService.fixIosAppIconName();
+    }
+
+    await projectService.cleanupDefaultAssets();
   }
 
   // ==============================

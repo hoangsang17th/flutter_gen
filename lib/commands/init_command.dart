@@ -1,6 +1,5 @@
 import 'dart:io';
-import 'package:yaml_edit/yaml_edit.dart';
-import 'package:yaml/yaml.dart';
+
 import 'base_command.dart';
 
 class InitCommand extends BaseCommand {
@@ -26,7 +25,8 @@ class InitCommand extends BaseCommand {
     // 1. Parse Arguments
     if (argResults?.rest.isEmpty ?? true) {
       print(
-          '❌ Error: Please provide an application ID (e.g., com.example.app)');
+        '❌ Error: Please provide an application ID (e.g., com.example.app)',
+      );
       return;
     }
 
@@ -97,7 +97,7 @@ class InitCommand extends BaseCommand {
 
       // Add FinvorasGen config
       editor.update([
-        'finvoras_gen'
+        'finvoras_gen',
       ], {
         'app_id': appId,
         'output': 'lib/generated/',
