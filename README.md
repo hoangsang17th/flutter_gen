@@ -38,7 +38,30 @@ Sử dụng hàng ngày để tạo các class Assets type-safe.
 # Mặc định (sử dụng pubspec.yaml)
 finvoras_gen assets
 
-### 3. Refresh Project (`refresh`)
+### 3. Setup Branding (`branding`)
+
+Thiết lập flavors, native splash screen và launcher icons cho dự án.
+
+```sh
+# Mặc định (dev, qa, prod)
+finvoras_gen branding
+
+# Tùy chỉnh danh sách environments
+finvoras_gen branding --envs dev,staging,prod
+
+# Sử dụng chế độ platform (mỗi flavor một Application ID riêng)
+finvoras_gen branding --type platform --envs dev,stg,prod
+```
+
+**Các tùy chọn:**
+
+- `--envs`, `-e`: Danh sách các môi trường (flavors), phân cách bằng dấu phẩy. Mặc định: `dev,qa,prod`.
+- `--type`, `-t`: Chế độ flavor:
+  - `behavior`: Sử dụng chung một Application ID (mặc định).
+  - `platform`: Mỗi flavor một Application ID riêng (ví dụ: `.dev`, `.qa`).
+
+### 4. Refresh Project (`refresh`)
+
 Sử dụng khi bạn cần dọn dẹp và lấy lại dependencies (rất hữu ích khi vừa đổi branch hoặc bị lỗi cache).
 
 ```sh
@@ -77,3 +100,12 @@ flutter:
 
 Lệnh `init` sẽ mặc định clone repository packages tại:
 `https://github.com/hoangsang17th/packages` vào thư mục `packages/`.
+
+
+# Try to verify
+
+```bash
+cd example
+finvoras_gen init vn.io.enth17.chopchop
+finvoras_gen branding
+```

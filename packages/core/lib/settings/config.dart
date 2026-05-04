@@ -3,8 +3,7 @@ import 'dart:io';
 import 'package:finvoras_gen_core/settings/config_default.dart';
 import 'package:finvoras_gen_core/settings/pubspec.dart';
 import 'package:finvoras_gen_core/utils/error.dart';
-import 'package:finvoras_gen_core/utils/map.dart';
-import 'package:finvoras_gen_core/version.gen.dart';
+import 'package:finvoras_gen_core/utils/map.dart'; 
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 

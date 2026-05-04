@@ -1,5 +1,6 @@
 name: finvoras_gen
 description: The Flutter code generator for your assets, fonts, colors, … — Get rid of all String-based APIs.
+# dart run build_runner build before change this version
 version: 3.0.2
 publish_to: none
 
@@ -10,6 +11,9 @@ resolution: workspace
 
 executables:
   finvoras_gen: flutter_gen_command
+
+version_gen:
+  path: lib/src/version/
 
 dependencies:
   finvoras_gen_core:
@@ -22,3 +26,5 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   test: ^1.16.0
   test_process: ^2.0.0
+  version_gen: ^1.0.1
+  build_runner: ^2.4.0
