@@ -52,7 +52,8 @@ class BrandingCommand extends BaseCommand {
     final pubspecFile = File('pubspec.yaml');
     if (!await pubspecFile.exists()) {
       throw Exception(
-          '❌ "pubspec.yaml" not found. Please run this command in a Flutter project root.');
+        '❌ "pubspec.yaml" not found. Please run this command in a Flutter project root.',
+      );
     }
 
     final pubspecContent = await pubspecFile.readAsString();
@@ -64,7 +65,8 @@ class BrandingCommand extends BaseCommand {
 
     print('🚀 Setting up branding for $appName...');
     print(
-        '📍 Mode: ${type == 'behavior' ? 'Application Behavior (Single ID)' : 'Platform ID + Behavior (Multiple IDs)'}');
+      '📍 Mode: ${type == 'behavior' ? 'Application Behavior (Single ID)' : 'Platform ID + Behavior (Multiple IDs)'}',
+    );
 
     // 1. Setup Configuration
     print('🛠 Generating flavorizr and branding configurations...');
@@ -91,8 +93,12 @@ class BrandingCommand extends BaseCommand {
     print('   - Create native flavors/schemes in Android/iOS');
     print('   - Update Application IDs / Bundle IDs');
     print('   - Generate "lib/flavors.dart" and "lib/main-<flavor>.dart"');
-    print('   - Generate VSCode launch configurations in ".vscode/launch.json"');
-    print('\n⚠️  Note: Make sure you have Ruby and Xcodeproj installed for iOS support.');
+    print(
+      '   - Generate VSCode launch configurations in ".vscode/launch.json"',
+    );
+    print(
+      '\n⚠️  Note: Make sure you have Ruby and Xcodeproj installed for iOS support.',
+    );
   }
 
   Future<void> _setupFlavorizrConfig(
@@ -115,8 +121,14 @@ class BrandingCommand extends BaseCommand {
 
       flavors[behavior] = {
         'app': {'name': '$appName ${behavior.toUpperCase()}'},
-        'android': {'applicationId': currentAppId},
-        'ios': {'bundleId': currentAppId},
+        'android': {
+          'applicationId': currentAppId,
+          'generateDummyAssets': false,
+        },
+        'ios': {
+          'bundleId': currentAppId,
+          'generateDummyAssets': false,
+        },
       };
     }
 
@@ -201,26 +213,26 @@ flutter_launcher_icons:
         print('❌ File still missing. Skipping generation to avoid errors.');
         print('💡 You can run it later with:');
         print('   dart run flutter_native_splash:create --all-flavors');
-        print('   dart run flutter_launcher_icons -f flutter_launcher_icons-<flavor>.yaml');
+        print(
+          '   dart run flutter_launcher_icons -f flutter_launcher_icons-<flavor>.yaml',
+        );
         return;
       }
     }
 
     print('🎨 Generating resources...');
-    
-    // Splash
-    await runCommand('dart', ['run', 'flutter_native_splash:create', '--all-flavors']);
-    
-    // Icons (run for each flavor)
-    final behaviors = _environments;
-    for (final behavior in behaviors) {
-      print('📦 Generating icons for $behavior...');
-      await runCommand('dart', [
-        'run',
-        'flutter_launcher_icons',
-        '-f',
-        'flutter_launcher_icons-$behavior.yaml'
-      ]);
-    }
+
+    // 1. Run Flavorizr first to create native structures
+    print('🔨 Running flutter_flavorizr...');
+    await runCommand('dart', ['run', 'flutter_flavorizr', '-f']);
+
+    // 2. Run Splash (supports flavors from pubspec.yaml)
+    print('💦 Generating splash screens...');
+    await runCommand('dart',
+        ['run', 'flutter_native_splash:create', '--all-flavors']);
+
+    // 3. Run Icons (supports flavors from pubspec.yaml)
+    print('📦 Generating launcher icons...');
+    await runCommand('dart', ['run', 'flutter_launcher_icons']);
   }
 }

@@ -1,6 +1,6 @@
 name: finvoras_gen
 description: The Flutter code generator for your assets, fonts, colors, … — Get rid of all String-based APIs.
-version: 3.0.0
+version: 3.0.2
 publish_to: none
 
 environment:

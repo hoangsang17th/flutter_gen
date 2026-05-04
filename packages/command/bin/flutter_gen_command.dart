@@ -7,6 +7,7 @@ import 'package:finvoras_gen/commands/refresh_command.dart';
 import 'package:finvoras_gen_core/version.gen.dart';
 
 void main(List<String> args) async {
+  stdout.writeln('🚀 FinvorasGen v$packageVersion');
   final runner = CommandRunner('finvoras_gen', 'FinvorasGen CLI tool')
     ..addCommand(AssetsCommand())
     ..addCommand(InitCommand())
