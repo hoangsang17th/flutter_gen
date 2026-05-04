@@ -68,7 +68,6 @@ ${packages.map((p) => '  - $p').join('\n')}
     final pathsToDelete = [
       'ios/Runner/Assets.xcassets/AppIcon.appiconset',
       'ios/Runner/Assets.xcassets/LaunchImage.imageset',
-      'test',
     ];
 
     for (final path in pathsToDelete) {

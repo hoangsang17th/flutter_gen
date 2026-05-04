@@ -34,6 +34,7 @@ class FlutterService {
   Future<void> create(String appName, String org, {String? appId}) async {
     await run([
       'create',
+      '--empty',
       '--org',
       org,
       '--project-name',
