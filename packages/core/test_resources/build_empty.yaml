@@ -1,7 +1,0 @@
-name: test
-
-targets:
-  $default:
-    builders:
-      finvoras_gen_runner:
-        options:

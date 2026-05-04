@@ -1,28 +1,43 @@
-name: finvoras_gen_root
+name: finvoras_gen
+description: Finvoras internal Flutter code generator and project bootstrapper.
+version: 3.0.2
 publish_to: none
 
 environment:
   sdk: ^3.6.0
 
-workspace:
-  - packages/command
-  - packages/core
-  - packages/runner
+executables:
+  finvoras_gen: flutter_gen_command
 
-melos:
-  scripts:
-    format:
-      run: dart format --set-exit-if-changed .
-      description: dart format --set-exit-if-changed .
-    gen:build_runner:
-      exec: dart run build_runner build --delete-conflicting-outputs
-      packageFilters:
-        ignore:
-          - example
-          - example_resources
-        dependsOn: build_runner
-      description: dart run build_runner build --delete-conflicting-outputs
+version_gen:
+  path: lib/src/version/
+
+dependencies:
+  meta: ^1.7.0
+  path: ^1.8.0
+  yaml: ^3.1.2
+  yaml_edit: ^2.2.1
+  mime: '>=1.0.0 <3.0.0'
+  xml: ^6.0.0
+  dartx: ^1.0.0
+  color: ^3.0.0
+  collection: ^1.17.0
+  json_annotation: ^4.4.0
+  glob: ^2.0.0
+  dart_style: '>=2.3.7 <4.0.0'
+  archive: '>=3.4.0 <5.0.0'
+  args: ^2.0.0
+  pub_semver: ^2.0.0
+  vector_graphics_compiler: ^1.1.9
+  image_size_getter: ^2.4.0
+  build: ^2.0.0
+  crypto: ^3.0.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0
-  melos: ^7.5.1
+  test: ^1.16.0
+  test_process: ^2.0.0
+  version_gen: ^1.0.1
+  build_runner: ^2.4.0
+  json_serializable: ^6.0.0
+  build_test: ^3.2.1
