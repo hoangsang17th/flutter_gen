@@ -55,11 +55,14 @@ class BrandingCommand extends BaseCommand {
       await _execute();
       _logSuccess('Branding setup completed');
     } catch (e) {
-      _logError('Branding setup failed: $e');
+      _logError(e.toString());
       exit(1);
     }
   }
 
+  // ==============================
+  // PARSE
+  // ==============================
   List<String> _parseEnvs() {
     final raw = argResults?['envs'] ?? 'dev,qa,prod';
     return raw
@@ -69,111 +72,265 @@ class BrandingCommand extends BaseCommand {
         .toList();
   }
 
+  // ==============================
+  // MAIN FLOW
+  // ==============================
   Future<void> _execute() async {
-    final appName = projectService.readPubspecConfig(['name']);
-    if (appName == null) throw Exception('pubspec.yaml error');
+    final pubspec = File('pubspec.yaml');
+    if (!pubspec.existsSync()) {
+      throw Exception('pubspec.yaml not found');
+    }
 
-    final appId =
-        projectService.readPubspecConfig(['finvoras_gen', 'app_id']) ??
-            'com.example.app';
+    final content = await pubspec.readAsString();
+    final doc = loadYaml(content);
+
+    final appName = doc['name'] as String?;
+    if (appName == null) {
+      throw Exception('Missing app name in pubspec.yaml');
+    }
+
+    String appId = 'com.example.app';
+    final finvoras = doc['finvoras_gen'];
+    if (finvoras is Map && finvoras['app_id'] is String) {
+      appId = finvoras['app_id'];
+    }
+
     final type = argResults!['type'];
 
-    _logInfo('App: $appName | Type: $type | Envs: $environments');
+    _logInfo('App: $appName');
+    _logInfo('Type: $type');
+    _logInfo('Envs: $environments');
 
-    // 1. Setup Flavorizr
-    await _setupFlavorizr(appName, appId, type);
+    _validateLogo();
 
-    // 2. Setup Branding Files
+    await _setupFlavorizr(pubspec, content, appName, appId, type);
     await _setupBrandingFiles();
 
-    // 3. Add Dependencies
-    await flutterService.addDependencies([
-      'dev:flutter_flavorizr',
-      'dev:flutter_native_splash',
-      'dev:flutter_launcher_icons',
-    ]);
+    if (isDryRun) {
+      _logWarn('Dry run mode → skip execution');
+      return;
+    }
 
-    // 4. Generate Assets
+    await _addDependencies();
     await _generateAssets(type);
   }
 
-  Future<void> _setupFlavorizr(
-      String appName, String appId, String type) async {
-    await projectService.updatePubspecYaml((editor) {
-      final flavors = <String, dynamic>{};
-      for (final env in environments) {
-        final currentId =
-            (type == 'platform' && env != 'prod') ? '$appId.$env' : appId;
-        flavors[env] = {
-          'app': {'name': '$appName ${env.toUpperCase()}'},
-          'android': {'applicationId': currentId, 'generateDummyAssets': false},
-          'ios': {'bundleId': currentId, 'generateDummyAssets': false},
-        };
+  // ==============================
+  // VALIDATION
+  // ==============================
+  void _validateLogo() {
+    if (!File(logoPath).existsSync()) {
+      _logWarn('Logo not found: $logoPath');
+
+      if (!isCI) {
+        stdout.write('Continue? (y/N): ');
+        final input = stdin.readLineSync();
+        if (input?.toLowerCase() != 'y') {
+          throw Exception('Aborted by user');
+        }
       }
-      editor.update(['flavorizr'], {'ide': 'vscode', 'flavors': flavors});
-    });
-    _logSuccess('Updated flavorizr config');
+    }
   }
 
+  // ==============================
+  // FLAVORIZR (MERGE SAFE)
+  // ==============================
+  Future<void> _setupFlavorizr(
+    File file,
+    String content,
+    String appName,
+    String appId,
+    String type,
+  ) async {
+    final editor = YamlEditor(content);
+    final doc = loadYaml(content);
+
+    final existing = doc['flavorizr'] ?? {};
+    final flavors = <String, dynamic>{};
+
+    for (final env in environments) {
+      final currentId =
+          (type == 'platform' && env != 'prod') ? '$appId.$env' : appId;
+
+      flavors[env] = {
+        'app': {'name': '$appName ${env.toUpperCase()}'},
+        'android': {
+          'applicationId': currentId,
+          'generateDummyAssets': false,
+        },
+        'ios': {
+          'bundleId': currentId,
+          'generateDummyAssets': false,
+        },
+      };
+    }
+
+    final merged = {
+      ...existing,
+      'ide': 'vscode',
+      'flavors': flavors,
+    };
+
+    if (isDryRun) {
+      _logInfo('[DRY RUN] Update flavorizr config');
+      return;
+    }
+
+    editor.update(['flavorizr'], merged);
+    await file.writeAsString(editor.toString());
+
+    _logSuccess('Flavorizr config updated');
+  }
+
+  // ==============================
+  // BRANDING FILES (IDEMPOTENT)
+  // ==============================
   Future<void> _setupBrandingFiles() async {
     for (final env in environments) {
-      final splashPath = 'flutter_native_splash-$env.yaml';
-      final iconPath = 'flutter_launcher_icons-$env.yaml';
+      await _writeIfChanged(
+        'flutter_native_splash-$env.yaml',
+        _buildSplashYaml(),
+      );
 
-      final splashContent = '''
+      await _writeIfChanged(
+        'flutter_launcher_icons-$env.yaml',
+        _buildIconYaml(),
+      );
+    }
+  }
+
+  String _buildSplashYaml() => '''
 flutter_native_splash:
   color: "#ffffff"
   image: $logoPath
   fullscreen: true
+
+  android_12:
+    color: "#ffffff"
+    image: $logoPath
+    icon_background_color: "#ffffff"
 ''';
-      final iconContent = '''
+
+  String _buildIconYaml() => '''
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "$logoPath"
 ''';
 
-      await File(splashPath).writeAsString(splashContent);
-      await File(iconPath).writeAsString(iconContent);
-      _logSuccess('Created branding configs for $env');
+  Future<void> _writeIfChanged(String path, String content) async {
+    final file = File(path);
+
+    if (file.existsSync()) {
+      final old = await file.readAsString();
+      if (old == content) {
+        _logInfo('Skip unchanged $path');
+        return;
+      }
     }
+
+    if (isDryRun) {
+      _logInfo('[DRY RUN] Write $path');
+      return;
+    }
+
+    await file.writeAsString(content);
+    _logSuccess('Created $path');
   }
 
-  Future<void> _generateAssets(String type) async {
-    // 1. flavorizr
-    await flutterService.run(['run', 'flutter_flavorizr', '-f']);
+  // ==============================
+  // DEPENDENCIES
+  // ==============================
+  Future<void> _addDependencies() async {
+    await _runCommand('flutter', [
+      'pub',
+      'add',
+      'dev:flutter_flavorizr',
+      'dev:flutter_native_splash',
+      'dev:flutter_launcher_icons',
+    ]);
+  }
 
-    // 2. splash & icons per flavor
+  // ==============================
+  // GENERATION
+  // ==============================
+  Future<void> _generateAssets(String type) async {
+    // flavorizr
+    await _runCommand('dart', ['run', 'flutter_flavorizr', '-f']);
+
     for (final env in environments) {
-      await flutterService.run([
+      // splash
+      await _runCommand('dart', [
         'run',
         'flutter_native_splash:create',
         '-f',
         'flutter_native_splash-$env.yaml'
       ]);
-      await flutterService.run([
+
+      // copy resource immediately (critical)
+      if (type == 'platform') {
+        await _copyAndroidResources(env);
+      }
+
+      // icon
+      await _runCommand('dart', [
         'run',
         'flutter_launcher_icons',
         '-f',
         'flutter_launcher_icons-$env.yaml'
       ]);
+    }
+  }
 
-      if (type == 'platform') {
-        await _copyAndroidResources(env);
+  // ==============================
+  // ANDROID COPY (CROSS-PLATFORM)
+  // ==============================
+  Future<void> _copyAndroidResources(String flavor) async {
+    final src = Directory('android/app/src/main/res');
+    final dest = Directory('android/app/src/$flavor/res');
+
+    if (!src.existsSync()) return;
+
+    if (dest.existsSync()) {
+      await dest.delete(recursive: true);
+    }
+
+    await for (final entity in src.list(recursive: true)) {
+      final newPath = entity.path.replaceFirst(src.path, dest.path);
+
+      if (entity is Directory) {
+        await Directory(newPath).create(recursive: true);
+      } else if (entity is File) {
+        await File(newPath).create(recursive: true);
+        await entity.copy(newPath);
       }
     }
+
+    _logSuccess('Copied Android res → $flavor');
   }
 
-  Future<void> _copyAndroidResources(String flavor) async {
-    final base = 'android/app/src/main/res';
-    final target = 'android/app/src/$flavor/res';
-    if (Directory(base).existsSync()) {
-      await Directory(target).create(recursive: true);
-      await flutterService.run(['cp', '-r', '$base/.', target]);
+  // ==============================
+  // COMMAND WRAPPER (FAIL FAST)
+  // ==============================
+  Future<void> _runCommand(String cmd, List<String> args) async {
+    _logInfo('$cmd ${args.join(' ')}');
+
+    final process = await Process.start(cmd, args, runInShell: true);
+    await stdout.addStream(process.stdout);
+    await stderr.addStream(process.stderr);
+
+    final code = await process.exitCode;
+
+    if (code != 0) {
+      throw Exception('Command failed: $cmd');
     }
   }
 
+  // ==============================
+  // LOG
+  // ==============================
   void _logInfo(String msg) => print('ℹ️  $msg');
+  void _logWarn(String msg) => print('⚠️  $msg');
+  void _logError(String msg) => print('❌ $msg');
   void _logSuccess(String msg) => print('✅ $msg');
-  void _logError(String msg) => print('X $msg');
 }

@@ -89,12 +89,11 @@ class InitCommand extends BaseCommand {
         editor.update(['dependencies', pkg], {'path': 'packages/$pkg'});
       }
 
-      // Update workspace
-      final workspaceList = ['packages/command']; // Default
-      for (final pkg in localPackages) {
-        workspaceList.add('packages/$pkg');
+      // Add workspace only if submodule packages exist
+      if (localPackages.isNotEmpty) {
+        final workspaceList = localPackages.map((p) => 'packages/$p').toList();
+        editor.update(['workspace'], workspaceList);
       }
-      editor.update(['workspace'], workspaceList);
 
       // Add FinvorasGen config
       editor.update([
