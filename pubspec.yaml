@@ -30,14 +30,13 @@ dependencies:
   pub_semver: ^2.0.0
   vector_graphics_compiler: ^1.1.9
   image_size_getter: ^2.4.0
-  build: ^2.0.0
+  build: ^4.0.0
   crypto: ^3.0.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0
   test: ^1.16.0
   test_process: ^2.0.0
-  version_gen: ^1.0.1
-  build_runner: ^2.4.0
+  build_runner: ^2.15.0
   json_serializable: ^6.0.0
   build_test: ^3.2.1
