@@ -281,9 +281,9 @@ flutter_launcher_icons:
       ]);
     }
 
-    if (type == 'platform') {
+    // if (type == 'platform') {
       await projectService.fixIosAppIconName();
-    }
+    // }
 
     await projectService.cleanupDefaultAssets();
   }

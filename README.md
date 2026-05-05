@@ -89,6 +89,8 @@ finvoras_gen branding --yes
 4. Thêm dev dependencies: `flutter_flavorizr`, `flutter_native_splash`, `flutter_launcher_icons`.
 5. Chạy `flutter_flavorizr`, sinh splash và icons cho từng môi trường.
 
+> **Lưu ý:** Khi sử dụng flavors, bạn cần build app với flag `--flavor <name>` (ví dụ: `flutter build appbundle --flavor prod`). Lệnh `fastlane` của công cụ này đã được cấu hình để tự động xử lý việc này.
+
 ---
 
 ### `prepare` — Setup code, DI & localization
@@ -145,6 +147,31 @@ finvoras_gen assets --config pubspec.yaml --build build.yaml
 |---|---|---|---|
 | `--config` | `-c` | `pubspec.yaml` | Đường dẫn đến file pubspec.yaml |
 | `--build` | `-b` | | Đường dẫn đến file build.yaml |
+
+---
+
+### `fastlane` — Setup deployment scripts
+
+Cấu hình Fastlane để tự động hóa việc deploy lên Google Play Store và Firebase App Distribution.
+
+```sh
+finvoras_gen fastlane
+```
+
+**Các bước tự động thực hiện:**
+
+1. Tạo thư mục `android/fastlane/`.
+2. Tạo file `Fastfile` với các lane chuẩn:
+   - `increment_version`: Tự động tăng build number trong `pubspec.yaml`.
+   - `deploy`: Build và Upload lên Play Store (`internal` track).
+   - `closed`: Build và Upload lên Play Store (`alpha` track).
+   - `production`: Build và Upload lên Play Store (`production` track).
+   - `beta`: Build và Upload lên Firebase App Distribution.
+
+**Đặc điểm nổi bật:**
+- **Hỗ trợ Flavor**: Tự động nhận diện nếu dự án có sử dụng flavors. Mặc định sẽ build flavor `prod`.
+- **Tùy biến Flavor**: Có thể chỉ định flavor khi chạy lệnh: `fastlane deploy flavor:dev`.
+- **Release Notes**: Tự động tạo file changelog tại `metadata/android/vi/changelogs` từ input của người dùng.
 
 ---
 
