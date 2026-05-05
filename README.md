@@ -152,7 +152,7 @@ finvoras_gen assets --config pubspec.yaml --build build.yaml
 
 ### `fastlane` — Setup deployment scripts
 
-Cấu hình Fastlane để tự động hóa việc deploy lên Google Play Store và Firebase App Distribution.
+Cấu hình Fastlane để tự động hóa việc deploy cho cả Android và iOS lên Google Play Store, TestFlight và Firebase App Distribution.
 
 ```sh
 finvoras_gen fastlane
@@ -160,18 +160,20 @@ finvoras_gen fastlane
 
 **Các bước tự động thực hiện:**
 
-1. Tạo thư mục `android/fastlane/`.
-2. Tạo file `Fastfile` với các lane chuẩn:
-   - `increment_version`: Tự động tăng build number trong `pubspec.yaml`.
-   - `deploy`: Build và Upload lên Play Store (`internal` track).
-   - `closed`: Build và Upload lên Play Store (`alpha` track).
-   - `production`: Build và Upload lên Play Store (`production` track).
+1. Kiểm tra sự tồn tại của thư mục `android/` và `ios/`.
+2. **Tự động sinh cấu hình**: Tự động tạo `Appfile` (sử dụng `app_id` từ dự án) và `Gemfile` mà không cần nhập liệu thủ công.
+3. Tạo file `Fastfile` với các lane chuẩn cho cả 2 nền tảng:
+   - `increment_version`: Tự động tăng build number trong `pubspec.yaml` (đồng bộ cho cả Android/iOS).
+   - `deploy`: Build và Upload lên Play Store (`internal`) hoặc TestFlight.
+   - `production`: Build và Upload lên Play Store (`production`) hoặc App Store.
    - `beta`: Build và Upload lên Firebase App Distribution.
+4. **Tùy chọn nâng cao**: Sau khi setup cơ bản, bạn có thể chọn chạy `fastlane init` để thiết lập nâng cao (metadata, screenshots).
 
 **Đặc điểm nổi bật:**
+- **Auto Flow**: Tự động lấy `app_id` từ `pubspec.yaml` để cấu hình `Appfile`.
+- **Đa nền tảng**: Hỗ trợ đầy đủ cho cả Android và iOS trong cùng một lệnh.
 - **Hỗ trợ Flavor**: Tự động nhận diện nếu dự án có sử dụng flavors. Mặc định sẽ build flavor `prod`.
-- **Tùy biến Flavor**: Có thể chỉ định flavor khi chạy lệnh: `fastlane deploy flavor:dev`.
-- **Release Notes**: Tự động tạo file changelog tại `metadata/android/vi/changelogs` từ input của người dùng.
+- **Release Notes**: Tự động tạo file changelog cho Android từ input của người dùng.
 
 ---
 
