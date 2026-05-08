@@ -133,10 +133,10 @@ platform :android do
     pubspec_path = "../../pubspec.yaml"
     content = File.read(pubspec_path)
     
-    # Tìm dòng version: x.y.z+n
-    if content =~ /version: (\\d+\\.\\d+\\.\\d+)\\+(\\d+)/
+    # Tìm dòng version: x.y.z+n hoặc x.y.z
+    if content =~ /version: (\\d+\\.\\d+\\.\\d+)(?:\\+(\\d+))?/
       version_name = \$1
-      build_number = \$2.to_i + 1
+      build_number = (\$2 || "0").to_i + 1
       new_version = "#{version_name}+#{build_number}"
       
       # Ghi lại vào file
@@ -264,9 +264,9 @@ platform :ios do
     pubspec_path = "../../pubspec.yaml"
     content = File.read(pubspec_path)
     
-    if content =~ /version: (\\d+\\.\\d+\\.\\d+)\\+(\\d+)/
+    if content =~ /version: (\\d+\\.\\d+\\.\\d+)(?:\\+(\\d+))?/
       version_name = \$1
-      build_number = \$2.to_i + 1
+      build_number = (\$2 || "0").to_i + 1
       new_version = "#{version_name}+#{build_number}"
       
       new_content = content.sub(/version: .*/, "version: #{new_version}")
@@ -330,7 +330,7 @@ platform :ios do
     # Set App ID dynamically for Appfile
     ENV["APP_ID"] = FLAVOR_IDS[flavor] || "$defaultAppId"
 
-    build_cmd = "cd ../.. && flutter build ios --release --no-codesign --obfuscate --split-debug-info=build/ios/outputs/symbols"
+    build_cmd = "cd ../.. && flutter build ipa --release --no-codesign --obfuscate --split-debug-info=build/ios/outputs/symbols"
     if flavor != "prod"
       build_cmd += " --flavor #{flavor}"
     end
@@ -339,7 +339,8 @@ platform :ios do
     firebase_app_distribution(
       app: ENV["FIREBASE_APP_ID_IOS"],
       groups: "testers",
-      release_notes: "Bản build iOS tự động"
+      release_notes: "Bản build iOS tự động",
+      ipa_path: "../build/ios/ipa/Runner.ipa"
     )
   end
 end

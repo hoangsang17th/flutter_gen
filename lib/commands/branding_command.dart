@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:collection/collection.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 import 'base_command.dart';
@@ -145,7 +146,7 @@ class BrandingCommand extends BaseCommand {
     final editor = YamlEditor(content);
     final doc = loadYaml(content);
 
-    final existing = doc['flavorizr'] ?? {};
+    final existing = doc['flavorizr'] is Map ? Map.from(doc['flavorizr']) : {};
     final flavors = <String, dynamic>{};
 
     for (final env in environments) {
@@ -242,13 +243,14 @@ flutter_launcher_icons:
   // DEPENDENCIES
   // ==============================
   Future<void> _addDependencies() async {
-    await _runCommand('flutter', [
+    await runCommand('flutter', [
       'pub',
       'add',
       'dev:flutter_flavorizr',
       'dev:flutter_native_splash',
       'dev:flutter_launcher_icons',
     ]);
+    await flutterService.pubGet();
   }
 
   // ==============================
@@ -256,15 +258,14 @@ flutter_launcher_icons:
   // ==============================
   Future<void> _generateAssets(String type) async {
     // flavorizr
-    await _runCommand('dart', ['run', 'flutter_flavorizr', '-f']);
+    await runCommand('dart', ['run', 'flutter_flavorizr', '-f']);
 
     for (final env in environments) {
       // splash
-      await _runCommand('dart', [
+      await runCommand('dart', [
         'run',
         'flutter_native_splash:create',
-        '-f',
-        env,
+        '--path=flutter_native_splash-$env.yaml',
       ]);
 
       // copy resource immediately (critical)
@@ -273,7 +274,7 @@ flutter_launcher_icons:
       }
 
       // icon
-      await _runCommand('dart', [
+      await runCommand('dart', [
         'run',
         'flutter_launcher_icons',
         '-f',
@@ -297,39 +298,54 @@ flutter_launcher_icons:
 
     if (!src.existsSync()) return;
 
-    if (dest.existsSync()) {
-      await dest.delete(recursive: true);
+    if (!dest.existsSync()) {
+      await dest.create(recursive: true);
     }
 
+    // 1. Identify all source relative paths
+    final srcRelativePaths = <String>{};
+    await for (final entity in src.list(recursive: true)) {
+      srcRelativePaths.add(entity.path.replaceFirst(src.path, ''));
+    }
+
+    // 2. Delete stale files/folders in dest that are not in src
+    if (dest.existsSync()) {
+      // List all entities in reverse order (deepest first) to safely delete
+      final destEntities = await dest.list(recursive: true).toList();
+      for (final entity in destEntities.reversed) {
+        final relativePath = entity.path.replaceFirst(dest.path, '');
+        if (!srcRelativePaths.contains(relativePath)) {
+          await entity.delete(recursive: true);
+        }
+      }
+    }
+
+    // 3. Sync files from src to dest
     await for (final entity in src.list(recursive: true)) {
       final newPath = entity.path.replaceFirst(src.path, dest.path);
 
       if (entity is Directory) {
         await Directory(newPath).create(recursive: true);
       } else if (entity is File) {
-        await File(newPath).create(recursive: true);
-        await entity.copy(newPath);
+        final destFile = File(newPath);
+        bool shouldCopy = true;
+
+        if (destFile.existsSync()) {
+          final srcBytes = await entity.readAsBytes();
+          final destBytes = await destFile.readAsBytes();
+          if (const ListEquality().equals(srcBytes, destBytes)) {
+            shouldCopy = false;
+          }
+        }
+
+        if (shouldCopy) {
+          await destFile.create(recursive: true);
+          await entity.copy(newPath);
+        }
       }
     }
 
     _logSuccess('Copied Android res → $flavor');
-  }
-
-  // ==============================
-  // COMMAND WRAPPER (FAIL FAST)
-  // ==============================
-  Future<void> _runCommand(String cmd, List<String> args) async {
-    _logInfo('$cmd ${args.join(' ')}');
-
-    final process = await Process.start(cmd, args, runInShell: true);
-    await stdout.addStream(process.stdout);
-    await stderr.addStream(process.stderr);
-
-    final code = await process.exitCode;
-
-    if (code != 0) {
-      throw Exception('Command failed: $cmd');
-    }
   }
 
   // ==============================

@@ -180,7 +180,7 @@ Future<void> prepareApp(WidgetsBinding binding) async {
 
     final content = '''
 import 'package:flutter/material.dart';
-${stack == 'bloc' ? "import 'package:go_router/go_router.dart';" : "import 'package:get/get.dart';"}
+${stack == 'bloc' ? "import 'package:go_router/go_router.dart';\nimport 'package:flutter_bloc/flutter_bloc.dart';" : "import 'package:get/get.dart';"}
 import 'core/config/prepare.dart';
 
 void main() async {
@@ -222,6 +222,7 @@ class AppOrchestrator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // AppOrchestrator wraps the main app to provide global providers or configurations
+    // For example, MultiBlocProvider for Bloc or initial bindings for GetX
     return child;
   }
 }
