@@ -317,7 +317,7 @@ platform :ios do
     sh(build_cmd)
     
     upload_to_testflight(
-      ipa: "../build/ios/ipa/Runner.ipa",
+      ipa: "../../build/ios/ipa/Runner.ipa",
       skip_waiting_for_build_processing: true
     )
     
@@ -340,7 +340,7 @@ platform :ios do
       app: ENV["FIREBASE_APP_ID_IOS"],
       groups: "testers",
       release_notes: "Bản build iOS tự động",
-      ipa_path: "../build/ios/ipa/Runner.ipa"
+      ipa_path: "../../build/ios/ipa/Runner.ipa"
     )
   end
 end
