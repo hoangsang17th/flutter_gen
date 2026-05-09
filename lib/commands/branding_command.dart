@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:collection/collection.dart';
+import 'package:finvoras_gen/src/templates/templates.dart';
+import 'package:finvoras_gen/src/utils/template_helper.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 import 'base_command.dart';
@@ -190,34 +192,20 @@ class BrandingCommand extends BaseCommand {
     for (final env in environments) {
       await _writeIfChanged(
         'flutter_native_splash-$env.yaml',
-        _buildSplashYaml(),
+        TemplateHelper.render(Templates.splashYaml, {
+          'color': '#ffffff',
+          'logoPath': logoPath,
+        }),
       );
 
       await _writeIfChanged(
         'flutter_launcher_icons-$env.yaml',
-        _buildIconYaml(),
+        TemplateHelper.render(Templates.launcherIconsYaml, {
+          'logoPath': logoPath,
+        }),
       );
     }
   }
-
-  String _buildSplashYaml() => '''
-flutter_native_splash:
-  color: "#ffffff"
-  image: $logoPath
-  fullscreen: true
-
-  android_12:
-    color: "#ffffff"
-    image: $logoPath
-    icon_background_color: "#ffffff"
-''';
-
-  String _buildIconYaml() => '''
-flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "$logoPath"
-''';
 
   Future<void> _writeIfChanged(String path, String content) async {
     final file = File(path);
