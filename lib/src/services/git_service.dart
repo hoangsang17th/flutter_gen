@@ -1,8 +1,11 @@
 import 'dart:io';
 
 class GitService {
-  Future<void> clone(String url, String path,
-      {bool recurseSubmodules = true}) async {
+  Future<void> clone(
+    String url,
+    String path, {
+    bool recurseSubmodules = true,
+  }) async {
     final args = ['clone'];
     if (recurseSubmodules) {
       args.add('--recurse-submodules');

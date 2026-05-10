@@ -15,10 +15,7 @@ Builder build(BuilderOptions options) => FlutterGenBuilder();
 
 class FlutterGenBuilder extends Builder {
   static AssetId _output(BuildStep buildStep, String path) {
-    return AssetId(
-      buildStep.inputId.package,
-      path,
-    );
+    return AssetId(buildStep.inputId.package, path);
   }
 
   final generator = FlutterGenerator(

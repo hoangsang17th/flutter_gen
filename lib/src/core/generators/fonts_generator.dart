@@ -9,11 +9,7 @@ import 'package:finvoras_gen/src/core/utils/error.dart';
 import 'package:finvoras_gen/src/core/utils/string.dart';
 
 class FontsGenConfig {
-  FontsGenConfig._(
-    this._packageName,
-    this.flutterGen,
-    this.fonts,
-  );
+  FontsGenConfig._(this._packageName, this.flutterGen, this.fonts);
 
   factory FontsGenConfig.fromConfig(Config config) {
     return FontsGenConfig._(
@@ -31,10 +27,7 @@ class FontsGenConfig {
       flutterGen.fonts.outputs.packageParameterEnabled ? _packageName : '';
 }
 
-String generateFonts(
-  FontsGenConfig config,
-  DartFormatter formatter,
-) {
+String generateFonts(FontsGenConfig config, DartFormatter formatter) {
   final fonts = config.fonts;
   final fontsConfig = config.flutterGen.fonts;
   if (fonts.isEmpty) {

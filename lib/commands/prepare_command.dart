@@ -1,6 +1,10 @@
 import 'dart:io';
-import 'package:yaml/yaml.dart';
+
 import 'package:finvoras_gen/src/core/flutter_generator.dart';
+import 'package:finvoras_gen/src/templates/templates.dart';
+import 'package:finvoras_gen/src/utils/template_helper.dart';
+import 'package:yaml/yaml.dart';
+
 import 'base_command.dart';
 
 class PrepareCommand extends BaseCommand {
@@ -18,7 +22,8 @@ class PrepareCommand extends BaseCommand {
   final name = 'prepare';
 
   @override
-  final description = 'Prepare project with DI, main setup, and core configurations.';
+  final description =
+      'Prepare project with DI, main setup, and core configurations.';
 
   @override
   Future<void> run() async {
@@ -35,7 +40,9 @@ class PrepareCommand extends BaseCommand {
     // 1. Pre-flight checks
     final pubspec = File('pubspec.yaml');
     if (!pubspec.existsSync()) {
-      throw Exception('pubspec.yaml not found. Please run this command in a Flutter project root.');
+      throw Exception(
+        'pubspec.yaml not found. Please run this command in a Flutter project root.',
+      );
     }
 
     print('🚀 Preparing project...');
@@ -51,7 +58,7 @@ class PrepareCommand extends BaseCommand {
 
     // 5. Update main.dart
     await _updateMainDart();
- 
+
     // 6. Add stack-specific dependencies
     await _addStackDependencies();
 
@@ -60,7 +67,10 @@ class PrepareCommand extends BaseCommand {
   }
 
   Future<void> _setupLocales() async {
-    final config = projectService.readPubspecConfig(['finvoras_gen', 'locales']);
+    final config = projectService.readPubspecConfig([
+      'finvoras_gen',
+      'locales',
+    ]);
     String folder = 'assets/locales';
     if (config is Map && config['folder'] is String) {
       folder = config['folder'];
@@ -70,13 +80,21 @@ class PrepareCommand extends BaseCommand {
 
     final enFile = File('$folder/en.json');
     if (!enFile.existsSync()) {
-      await enFile.writeAsString('{\n  "app_name": "My App"\n}\n');
+      await enFile.writeAsString(
+        TemplateHelper.generate(PrepareTemplates.localeJson, {
+          'appName': 'My App',
+        }),
+      );
       print('📝 Created $folder/en.json');
     }
 
     final viFile = File('$folder/vi.json');
     if (!viFile.existsSync()) {
-      await viFile.writeAsString('{\n  "app_name": "Ứng dụng của tôi"\n}\n');
+      await viFile.writeAsString(
+        TemplateHelper.generate(PrepareTemplates.localeJson, {
+          'appName': 'Ứng dụng của tôi',
+        }),
+      );
       print('📝 Created $folder/vi.json');
     }
   }
@@ -84,20 +102,10 @@ class PrepareCommand extends BaseCommand {
   Future<void> _setupDI() async {
     await projectService.createDirectories(['lib/src/di']);
     final file = File('lib/src/di/injection.dart');
-    
+
     if (file.existsSync()) return;
 
-    final content = '''
-import 'package:get_it/get_it.dart';
-import 'package:injectable/injectable.dart';
-import 'injection.config.dart';
-
-final getIt = GetIt.instance;
-
-@InjectableInit()
-Future<void> configureDependencies() async => getIt.init();
-''';
-    await file.writeAsString(content);
+    await file.writeAsString(PrepareTemplates.injectionDart);
     print('📝 Created lib/src/di/injection.dart');
   }
 
@@ -105,47 +113,7 @@ Future<void> configureDependencies() async => getIt.init();
     await projectService.createDirectories(['lib/core/config']);
     final file = File('lib/core/config/prepare.dart');
 
-    final content = '''
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
-// TODO: Import your services and DI here
-// import '../../src/di/injection.dart';
-
-Future<void> prepareApp(WidgetsBinding binding) async {
-  // 1. Error widget builder
-  ErrorWidget.builder = (_) => const SizedBox.shrink();
-
-  // 2. Preserve splash screen
-  FlutterNativeSplash.preserve(widgetsBinding: binding);
-
-  // 3. System UI Mode
-  await SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.manual,
-    overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top],
-  );
-
-  // 4. Dependency Injection
-  // await configureDependencies();
-  // registerAppOrchestratorDependencies();
-  
-  // 5. Core Services Initialization
-  // await AppPathService.instance.init();
-  // await AppKeyStorage.instance.init();
-  // await AppActions.instance.init();
-
-  // 6. Preferred Orientations
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  // 7. Remove splash screen
-  FlutterNativeSplash.remove();
-}
-''';
-
-    await file.writeAsString(content);
+    await file.writeAsString(PrepareTemplates.prepareDart);
     print('📝 Created lib/core/config/prepare.dart');
   }
 
@@ -153,79 +121,24 @@ Future<void> prepareApp(WidgetsBinding binding) async {
     final mainFile = File('lib/main.dart');
     final stack = argResults?['stack'] as String? ?? 'bloc';
 
+    String imports;
     String materialApp;
+    String router = '';
+
     if (stack == 'bloc') {
-      materialApp = '''
-      child: MaterialApp.router(
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        routerConfig: _router,
-      ),''';
+      imports = "import 'package:go_router/go_router.dart';";
+      materialApp = PrepareTemplates.blocMaterialApp;
+      router = PrepareTemplates.blocRouter;
     } else {
-      materialApp = '''
-      child: GetMaterialApp(
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        home: const Scaffold(
-          body: Center(child: Text('App Prepared with GetX!')),
-        ),
-      ),''';
+      imports = "import 'package:get/get.dart';";
+      materialApp = PrepareTemplates.getxMaterialApp;
     }
 
-    final content = '''
-import 'package:flutter/material.dart';
-${stack == 'bloc' ? "import 'package:go_router/go_router.dart';" : "import 'package:get/get.dart';"}
-import 'core/config/prepare.dart';
-
-void main() async {
-  final binding = WidgetsFlutterBinding.ensureInitialized();
-  
-  await prepareApp(binding);
-  
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppOrchestrator(
-$materialApp
-    );
-  }
-}
-
-${stack == 'bloc' ? """
-final _router = GoRouter(
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const Scaffold(
-        body: Center(child: Text('App Prepared with Bloc & GoRouter!')),
-      ),
-    ),
-  ],
-);
-""" : ""}
-
-class AppOrchestrator extends StatelessWidget {
-  final Widget child;
-  const AppOrchestrator({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    // AppOrchestrator wraps the main app to provide global providers or configurations
-    return child;
-  }
-}
-''';
+    final content = TemplateHelper.generate(PrepareTemplates.mainDart, {
+      'imports': imports,
+      'materialApp': materialApp,
+      'router': router,
+    });
 
     await mainFile.writeAsString(content);
     print('📝 Updated lib/main.dart (stack: $stack)');
@@ -270,7 +183,7 @@ class AppOrchestrator extends StatelessWidget {
         'run',
         'build_runner',
         'build',
-        '--delete-conflicting-outputs'
+        '--delete-conflicting-outputs',
       ]);
     }
   }

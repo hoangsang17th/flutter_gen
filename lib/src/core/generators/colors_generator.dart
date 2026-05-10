@@ -97,11 +97,7 @@ String _colorStatement(_Color color) {
 }
 
 class _Color {
-  const _Color(
-    this.name,
-    this.hex,
-    this._types,
-  );
+  const _Color(this.name, this.hex, this._types);
 
   _Color.fromXmlElement(XmlElement element)
       : this(

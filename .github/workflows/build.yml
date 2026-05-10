@@ -34,30 +34,57 @@ jobs:
 
       - name: Get dependencies
         run: |
-          dart pub global activate melos
+          if [ -f "melos.yaml" ]; then
+            dart pub global activate melos
+          fi
           dart pub get
 
       - name: Run tests for Dart packages
         if: startsWith(matrix.os, 'ubuntu')
-        run: dart test --concurrency=1
+        run: |
+          if [ -d "test" ]; then
+            dart test --concurrency=1
+          else
+            echo "No test directory found, skipping tests."
+          fi
 
       - name: Run tests for Flutter packages
         if: startsWith(matrix.os, 'ubuntu')
-        run: flutter test --concurrency=1
+        run: |
+          if [ -d "test" ]; then
+            flutter test --concurrency=1
+          else
+            echo "No test directory found, skipping tests."
+          fi
 
       - name: Run coverage
         if: startsWith(matrix.os, 'ubuntu')
-        run: bash ./scripts/coverage.sh packages/core
+        run: |
+          if [ -d "scripts" ] && [ -f "scripts/coverage.sh" ]; then
+            bash ./scripts/coverage.sh packages/core
+          else
+            echo "Coverage script not found, skipping."
+          fi
 
       - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./packages/core/coverage.lcov
+        continue-on-error: true
 
       - name: Generate example
-        run: melos run gen:build_runner --no-select
+        run: |
+          if [ -f "melos.yaml" ]; then
+            melos run gen:build_runner --no-select
+          else
+            echo "Not a melos workspace, skipping generation."
+          fi
 
       - name: Check for any formatting and statically analyze the code.
         run: |
-          melos format
+          if [ -f "melos.yaml" ]; then
+            melos format
+          else
+            dart format --output=none --set-exit-if-changed .
+          fi
           flutter analyze

@@ -154,22 +154,12 @@ class BrandingCommand extends BaseCommand {
 
       flavors[env] = {
         'app': {'name': '$appName ${env.toUpperCase()}'},
-        'android': {
-          'applicationId': currentId,
-          'generateDummyAssets': false,
-        },
-        'ios': {
-          'bundleId': currentId,
-          'generateDummyAssets': false,
-        },
+        'android': {'applicationId': currentId, 'generateDummyAssets': false},
+        'ios': {'bundleId': currentId, 'generateDummyAssets': false},
       };
     }
 
-    final merged = {
-      ...existing,
-      'ide': 'vscode',
-      'flavors': flavors,
-    };
+    final merged = {...existing, 'ide': 'vscode', 'flavors': flavors};
 
     if (isDryRun) {
       _logInfo('[DRY RUN] Update flavorizr config');
@@ -282,7 +272,7 @@ flutter_launcher_icons:
     }
 
     // if (type == 'platform') {
-      await projectService.fixIosAppIconName();
+    await projectService.fixIosAppIconName();
     // }
 
     await projectService.cleanupDefaultAssets();

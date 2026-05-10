@@ -52,17 +52,22 @@ class FlutterGenerator {
 
     writer ??= defaultWriter;
 
-    final absoluteOutput =
-        Directory(normalize(join(pubspecFile.parent.path, output)));
+    final absoluteOutput = Directory(
+      normalize(join(pubspecFile.parent.path, output)),
+    );
     if (!absoluteOutput.existsSync()) {
       absoluteOutput.createSync(recursive: true);
     }
 
     if (flutterGen.colors.enabled && flutterGen.colors.inputs.isNotEmpty) {
-      final generated =
-          generateColors(pubspecFile, formatter, flutterGen.colors);
-      final colorsPath =
-          normalize(join(pubspecFile.parent.path, output, colorsName));
+      final generated = generateColors(
+        pubspecFile,
+        formatter,
+        flutterGen.colors,
+      );
+      final colorsPath = normalize(
+        join(pubspecFile.parent.path, output, colorsName),
+      );
       writer(generated, colorsPath);
       stdout.writeln('[FinvorasGen] Generated: $colorsPath');
     }
@@ -78,8 +83,9 @@ class FlutterGenerator {
           '[FinvorasGen] Skipped locales: folder not found (${flutterGen.locales.folder})',
         );
       } else {
-        final localesPath =
-            normalize(join(pubspecFile.parent.path, output, localesName));
+        final localesPath = normalize(
+          join(pubspecFile.parent.path, output, localesName),
+        );
         writer(generated, localesPath);
         stdout.writeln('[FinvorasGen] Generated: $localesPath');
       }
@@ -90,8 +96,9 @@ class FlutterGenerator {
         AssetsGenConfig.fromConfig(pubspecFile, config),
         formatter,
       );
-      final assetsPath =
-          normalize(join(pubspecFile.parent.path, output, assetsName));
+      final assetsPath = normalize(
+        join(pubspecFile.parent.path, output, assetsName),
+      );
       writer(generated, assetsPath);
       stdout.writeln('[FinvorasGen] Generated: $assetsPath');
     }
@@ -101,8 +108,9 @@ class FlutterGenerator {
         FontsGenConfig.fromConfig(config),
         formatter,
       );
-      final fontsPath =
-          normalize(join(pubspecFile.parent.path, output, fontsName));
+      final fontsPath = normalize(
+        join(pubspecFile.parent.path, output, fontsName),
+      );
       writer(generated, fontsPath);
       stdout.writeln('[FinvorasGen] Generated: $fontsPath');
     }

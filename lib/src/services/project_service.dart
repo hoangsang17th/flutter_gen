@@ -39,8 +39,10 @@ ${packages.map((p) => '  - $p').join('\n')}
     );
 
     if (platformRegex.hasMatch(content)) {
-      final newContent =
-          content.replaceFirst(platformRegex, "platform :ios, '$version'");
+      final newContent = content.replaceFirst(
+        platformRegex,
+        "platform :ios, '$version'",
+      );
       await file.writeAsString(newContent);
     } else {
       final newContent = "platform :ios, '$version'\n$content";

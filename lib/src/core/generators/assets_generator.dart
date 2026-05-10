@@ -60,22 +60,16 @@ Future<String> generateAssets(
 
   final integrations = <Integration>[
     if (config.flutterGen.integrations.image)
-      ImageIntegration(
-        config.packageParameterLiteral,
-      ),
+      ImageIntegration(config.packageParameterLiteral),
     if (config.flutterGen.integrations.flutterSvg)
       SvgIntegration(
         config.packageParameterLiteral,
         parseMetadata: config.flutterGen.parseMetadata,
       ),
     if (config.flutterGen.integrations.rive)
-      RiveIntegration(
-        config.packageParameterLiteral,
-      ),
+      RiveIntegration(config.packageParameterLiteral),
     if (config.flutterGen.integrations.lottie)
-      LottieIntegration(
-        config.packageParameterLiteral,
-      ),
+      LottieIntegration(config.packageParameterLiteral),
   ];
 
   // Warn for deprecated configs.
@@ -92,11 +86,7 @@ Future<String> generateAssets(
           'asset',
           'asset.output',
           'https://github.com/FlutterGen/finvoras_gen/pull/294',
-          [
-            '  assets:',
-            '    outputs:',
-            '      style: snake-case',
-          ],
+          ['  assets:', '    outputs:', '      style: snake-case'],
         ),
       );
     }
@@ -424,11 +414,7 @@ Future<String> _snakeCaseStyleDefinition(
   AssetsGenConfig config,
   List<Integration> integrations,
 ) {
-  return _flatStyleDefinition(
-    config,
-    integrations,
-    snakeCase,
-  );
+  return _flatStyleDefinition(config, integrations, snakeCase);
 }
 
 /// Generate style like Assets.fooBar
@@ -436,11 +422,7 @@ Future<String> _camelCaseStyleDefinition(
   AssetsGenConfig config,
   List<Integration> integrations,
 ) {
-  return _flatStyleDefinition(
-    config,
-    integrations,
-    camelCase,
-  );
+  return _flatStyleDefinition(config, integrations, camelCase);
 }
 
 Future<String> _flatStyleDefinition(
@@ -464,13 +446,7 @@ Future<String> _flatStyleDefinition(
           ),
         )
         .mapToUniqueAssetType(style)
-        .map(
-          (e) => _createAssetTypeStatement(
-            config,
-            e,
-            integrations,
-          ),
-        ),
+        .map((e) => _createAssetTypeStatement(config, e, integrations)),
   );
   final statements = results.whereType<_Statement>().toList();
   final className = config.flutterGen.assets.outputs.className;

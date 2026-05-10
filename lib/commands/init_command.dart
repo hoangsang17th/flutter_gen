@@ -96,29 +96,27 @@ class InitCommand extends BaseCommand {
       }
 
       // Add FinvorasGen config
-      editor.update([
-        'finvoras_gen',
-      ], {
-        'app_id': appId,
-        'output': 'lib/generated/',
-        'line_length': 80,
-        'assets': {
-          'enabled': true,
-          'outputs': {'class_name': 'AppAssets'},
-        },
-        'locales': {
-          'enabled': true,
-          'folder': 'assets/locales',
-          'outputs': {
-            'translation_name': 'AppTranslation',
-            'keys_name': 'AppLocalesKeys',
+      editor.update(
+        ['finvoras_gen'],
+        {
+          'app_id': appId,
+          'output': 'lib/generated/',
+          'line_length': 80,
+          'assets': {
+            'enabled': true,
+            'outputs': {'class_name': 'AppAssets'},
           },
+          'locales': {
+            'enabled': true,
+            'folder': 'assets/locales',
+            'outputs': {
+              'translation_name': 'AppTranslation',
+              'keys_name': 'AppLocalesKeys',
+            },
+          },
+          'integrations': {'flutter_svg': true, 'lottie': true},
         },
-        'integrations': {
-          'flutter_svg': true,
-          'lottie': true,
-        },
-      });
+      );
     });
 
     // 5.2 Add standard packages via CLI
