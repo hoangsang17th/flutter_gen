@@ -6,7 +6,8 @@ class FastlaneCommand extends BaseCommand {
   final name = 'fastlane';
 
   @override
-  final description = 'Setup fastlane for Android and iOS using Fastlane CLI and pre-configured lanes.';
+  final description =
+      'Setup fastlane for Android and iOS using Fastlane CLI and pre-configured lanes.';
 
   @override
   Future<void> run() async {
@@ -23,7 +24,8 @@ class FastlaneCommand extends BaseCommand {
     // 1. Pre-flight checks
     final pubspec = File('pubspec.yaml');
     if (!pubspec.existsSync()) {
-      throw Exception('pubspec.yaml not found. Please run this command in a Flutter project root.');
+      throw Exception(
+          'pubspec.yaml not found. Please run this command in a Flutter project root.');
     }
 
     // 2. Check if fastlane is installed
@@ -31,7 +33,8 @@ class FastlaneCommand extends BaseCommand {
       await Process.run('fastlane', ['--version']);
     } catch (_) {
       print('⚠️ Fastlane is not installed or not in PATH.');
-      print('💡 Please install it first: https://docs.fastlane.tools/getting-started/ios/setup/');
+      print(
+          '💡 Please install it first: https://docs.fastlane.tools/getting-started/ios/setup/');
       return;
     }
 
@@ -49,8 +52,11 @@ class FastlaneCommand extends BaseCommand {
   Future<void> _setupPlatform(String platform) async {
     print('\n🚀 Setting up Fastlane for $platform...');
 
-    final appId = projectService.readPubspecConfig(['finvoras_gen', 'app_id']) as String? ?? 'com.example.app';
-    final flavors = projectService.readPubspecConfig(['flavorizr', 'flavors']) as Map?;
+    final appId = projectService.readPubspecConfig(['finvoras_gen', 'app_id'])
+            as String? ??
+        'com.example.app';
+    final flavors =
+        projectService.readPubspecConfig(['flavorizr', 'flavors']) as Map?;
 
     // 1. Ensure fastlane directory exists
     final fastlaneDir = Directory('$platform/fastlane');
@@ -80,7 +86,8 @@ apple_id("apple@example.com") # TODO: Update your Apple ID
     // 3. Create/Update Gemfile if not exists
     final gemfile = File('$platform/Gemfile');
     if (!gemfile.existsSync()) {
-      await gemfile.writeAsString("source \"https://rubygems.org\"\n\ngem \"fastlane\"\n");
+      await gemfile.writeAsString(
+          "source \"https://rubygems.org\"\n\ngem \"fastlane\"\n");
       print('📝 Created $platform/Gemfile');
     }
 
@@ -93,9 +100,10 @@ apple_id("apple@example.com") # TODO: Update your Apple ID
 
     // 5. Optional fastlane init (Interactive)
     print('\n💡 Basic Fastlane structure is ready.');
-    stdout.write('❓ Do you want to run "fastlane init" for advanced store setup (metadata, screenshots)? (y/N): ');
+    stdout.write(
+        '❓ Do you want to run "fastlane init" for advanced store setup (metadata, screenshots)? (y/N): ');
     final input = stdin.readLineSync()?.toLowerCase();
-    
+
     if (input == 'y') {
       print('📦 Starting fastlane init in $platform directory...');
       final process = await Process.start(
@@ -111,7 +119,7 @@ apple_id("apple@example.com") # TODO: Update your Apple ID
 
   Future<void> _writeAndroidFastfile(String defaultAppId, Map? flavors) async {
     final fastfile = File('android/fastlane/Fastfile');
-    
+
     String flavorMapping = '';
     if (flavors != null) {
       flavorMapping = 'FLAVOR_IDS = {\n';
@@ -242,7 +250,7 @@ end
 
   Future<void> _writeIosFastfile(String defaultAppId, Map? flavors) async {
     final fastfile = File('ios/fastlane/Fastfile');
-    
+
     String flavorMapping = '';
     if (flavors != null) {
       flavorMapping = 'FLAVOR_IDS = {\n';

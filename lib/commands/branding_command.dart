@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:yaml/yaml.dart';
-import 'package:yaml_edit/yaml_edit.dart';
 import 'base_command.dart';
 
 class BrandingCommand extends BaseCommand {
