@@ -79,6 +79,51 @@ class BrandingCommand extends BaseCommand {
   // MAIN FLOW
   // ==============================
   Future<void> _execute() async {
+    final type = argResults!['type'];
+    _logInfo('Type: $type');
+    _logInfo('Envs: $environments');
+
+    if (type == 'behavior') {
+      await _executeBehaviorFlow();
+    } else {
+      await _executePlatformFlow();
+    }
+  }
+
+  Future<void> _executeBehaviorFlow() async {
+    _logInfo('Running Behavior Flow (Dart-only environments)');
+
+    final envDir = Directory('lib/core/config/env');
+    if (!envDir.existsSync()) {
+      await envDir.create(recursive: true);
+    }
+
+    // 1. Create base abstract class
+    await _writeIfChanged(
+      'lib/core/config/env/app_env.dart',
+      TemplateHelper.render(Templates.envBase, {}),
+    );
+
+    // 2. Create implementations
+    for (final env in environments) {
+      final className =
+          '${env[0].toUpperCase()}${env.substring(1).toLowerCase()}Env';
+      await _writeIfChanged(
+        'lib/core/config/env/${env.toLowerCase()}_env.dart',
+        TemplateHelper.render(Templates.envImpl, {
+          'className': className,
+          'envName': env.toUpperCase(),
+          'baseUrl': 'https://api.${env.toLowerCase()}.example.com',
+        }),
+      );
+    }
+
+    _logSuccess('Behavior branding files generated');
+  }
+
+  Future<void> _executePlatformFlow() async {
+    _logInfo('Running Platform Flow (Native flavors + Branding)');
+
     final pubspec = File('pubspec.yaml');
     if (!pubspec.existsSync()) {
       throw Exception('pubspec.yaml not found');
@@ -101,8 +146,6 @@ class BrandingCommand extends BaseCommand {
     final type = argResults!['type'];
 
     _logInfo('App: $appName');
-    _logInfo('Type: $type');
-    _logInfo('Envs: $environments');
 
     _validateLogo();
 

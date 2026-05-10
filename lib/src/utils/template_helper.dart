@@ -1,6 +1,6 @@
-import 'dart:io';
-
 class TemplateHelper {
+  TemplateHelper._();
+
   static String render(String template, Map<String, dynamic> variables) {
     var result = template;
 
@@ -61,14 +61,4 @@ class TemplateHelper {
     return result;
   }
 
-  static Future<String> getTemplate(String path) async {
-    // In a real app, these might be assets or embedded strings.
-    // For now, we read from the filesystem as we are in the source tree.
-    // When distributed, we'd need a different way.
-    final file = File(path);
-    if (!file.existsSync()) {
-      throw Exception('Template not found: $path');
-    }
-    return file.readAsString();
-  }
 }

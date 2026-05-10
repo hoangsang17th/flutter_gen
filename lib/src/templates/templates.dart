@@ -350,4 +350,23 @@ platform :ios do
   end
 end
 ''';
+
+  static const envBase = r'''
+abstract class AppEnv {
+  String get name;
+  String get baseUrl;
+}
+''';
+
+  static const envImpl = r'''
+import 'app_env.dart';
+
+class {{className}} extends AppEnv {
+  @override
+  final String name = '{{envName}}';
+
+  @override
+  final String baseUrl = '{{baseUrl}}';
+}
+''';
 }
