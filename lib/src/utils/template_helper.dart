@@ -1,4 +1,6 @@
 class TemplateHelper {
+  TemplateHelper._();
+
   static String generate(String template, Map<String, String> variables) {
     String result = template;
     variables.forEach((key, value) {
