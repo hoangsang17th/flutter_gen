@@ -25,7 +25,7 @@ class FastlaneCommand extends BaseCommand {
     final pubspec = File('pubspec.yaml');
     if (!pubspec.existsSync()) {
       throw Exception(
-          'pubspec.yaml not found. Please run this command in a Flutter project root.');
+          'pubspec.yaml not found. Please run this command in a Flutter project root.',);
     }
 
     // 2. Check if fastlane is installed
@@ -34,7 +34,7 @@ class FastlaneCommand extends BaseCommand {
     } catch (_) {
       print('⚠️ Fastlane is not installed or not in PATH.');
       print(
-          '💡 Please install it first: https://docs.fastlane.tools/getting-started/ios/setup/');
+          '💡 Please install it first: https://docs.fastlane.tools/getting-started/ios/setup/',);
       return;
     }
 
@@ -87,7 +87,7 @@ apple_id("apple@example.com") # TODO: Update your Apple ID
     final gemfile = File('$platform/Gemfile');
     if (!gemfile.existsSync()) {
       await gemfile.writeAsString(
-          "source \"https://rubygems.org\"\n\ngem \"fastlane\"\n");
+          'source "https://rubygems.org"\n\ngem "fastlane"\n',);
       print('📝 Created $platform/Gemfile');
     }
 
@@ -101,7 +101,7 @@ apple_id("apple@example.com") # TODO: Update your Apple ID
     // 5. Optional fastlane init (Interactive)
     print('\n💡 Basic Fastlane structure is ready.');
     stdout.write(
-        '❓ Do you want to run "fastlane init" for advanced store setup (metadata, screenshots)? (y/N): ');
+        '❓ Do you want to run "fastlane init" for advanced store setup (metadata, screenshots)? (y/N): ',);
     final input = stdin.readLineSync()?.toLowerCase();
 
     if (input == 'y') {

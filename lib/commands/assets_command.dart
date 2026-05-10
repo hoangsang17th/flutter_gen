@@ -5,11 +5,6 @@ import 'package:finvoras_gen/src/core/utils/cast.dart';
 import 'package:finvoras_gen/src/core/utils/error.dart';
 
 class AssetsCommand extends Command {
-  @override
-  final name = 'assets';
-
-  @override
-  final description = 'Generate assets, fonts, and colors.';
 
   AssetsCommand() {
     argParser.addOption(
@@ -25,6 +20,11 @@ class AssetsCommand extends Command {
       help: 'Set the path of build.yaml.',
     );
   }
+  @override
+  final name = 'assets';
+
+  @override
+  final description = 'Generate assets, fonts, and colors.';
 
   @override
   void run() async {

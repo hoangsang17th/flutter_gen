@@ -1,6 +1,8 @@
 import 'dart:io';
-import 'package:yaml/yaml.dart';
+
 import 'package:finvoras_gen/src/core/flutter_generator.dart';
+import 'package:yaml/yaml.dart';
+
 import 'base_command.dart';
 
 class PrepareCommand extends BaseCommand {
@@ -37,7 +39,7 @@ class PrepareCommand extends BaseCommand {
     final pubspec = File('pubspec.yaml');
     if (!pubspec.existsSync()) {
       throw Exception(
-          'pubspec.yaml not found. Please run this command in a Flutter project root.');
+          'pubspec.yaml not found. Please run this command in a Flutter project root.',);
     }
 
     print('🚀 Preparing project...');
@@ -273,7 +275,7 @@ class AppOrchestrator extends StatelessWidget {
         'run',
         'build_runner',
         'build',
-        '--delete-conflicting-outputs'
+        '--delete-conflicting-outputs',
       ]);
     }
   }

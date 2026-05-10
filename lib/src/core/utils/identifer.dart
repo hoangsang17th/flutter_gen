@@ -8,7 +8,7 @@
 /// 3. Limited reserved words.
 /// 4. Reserved words, which can’t be identifiers.
 ///
-library identifer;
+library;
 
 // 1. Contextual keywords, which have meaning only in specific places. They’re
 // valid identifiers everywhere.

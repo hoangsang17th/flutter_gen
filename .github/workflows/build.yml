@@ -67,8 +67,10 @@ jobs:
           fi
         shell: bash
 
-      - uses: codecov/codecov-action@v5
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
         if: startsWith(matrix.os, 'ubuntu')
+        continue-on-error: true
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./packages/core/coverage.lcov

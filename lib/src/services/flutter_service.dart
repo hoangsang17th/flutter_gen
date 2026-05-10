@@ -2,17 +2,17 @@ import 'dart:io';
 
 class FlutterService {
   Future<void> run(List<String> arguments,
-      {String? cwd, bool throwOnError = true}) async {
+      {String? cwd, bool throwOnError = true,}) async {
     await _execute('flutter', arguments, cwd: cwd, throwOnError: throwOnError);
   }
 
   Future<void> dart(List<String> arguments,
-      {String? cwd, bool throwOnError = true}) async {
+      {String? cwd, bool throwOnError = true,}) async {
     await _execute('dart', arguments, cwd: cwd, throwOnError: throwOnError);
   }
 
   Future<void> _execute(String command, List<String> arguments,
-      {String? cwd, bool throwOnError = true}) async {
+      {String? cwd, bool throwOnError = true,}) async {
     print('🚀 Executing: $command ${arguments.join(' ')}');
 
     final process = await Process.start(
