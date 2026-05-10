@@ -55,9 +55,9 @@ jobs:
           files: ./packages/core/coverage.lcov
 
       - name: Generate example
-        run: melos run gen:build_runner --no-select
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Check for any formatting and statically analyze the code.
         run: |
-          melos format
+          dart format .
           flutter analyze
