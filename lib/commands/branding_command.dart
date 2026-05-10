@@ -177,6 +177,7 @@ class BrandingCommand extends BaseCommand {
     }
 
     editor.update(['flavorizr'], merged);
+    editor.update(['finvoras_gen', 'branding_type'], type);
     await file.writeAsString(editor.toString());
 
     _logSuccess('Flavorizr config updated');

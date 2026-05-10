@@ -50,6 +50,7 @@ class FastlaneCommand extends BaseCommand {
     print('\n🚀 Setting up Fastlane for $platform...');
 
     final appId = projectService.readPubspecConfig(['finvoras_gen', 'app_id']) as String? ?? 'com.example.app';
+    final brandingType = projectService.readPubspecConfig(['finvoras_gen', 'branding_type']) as String? ?? 'behavior';
     final flavors = projectService.readPubspecConfig(['flavorizr', 'flavors']) as Map?;
 
     // 1. Ensure fastlane directory exists
@@ -80,18 +81,25 @@ apple_id("apple@example.com") # TODO: Update your Apple ID
     // 3. Create/Update Gemfile if not exists
     final gemfile = File('$platform/Gemfile');
     if (!gemfile.existsSync()) {
-      await gemfile.writeAsString("source \"https://rubygems.org\"\n\ngem \"fastlane\"\n");
+      await gemfile.writeAsString(
+        "source 'https://rubygems.org'\n\n"
+        "gem 'fastlane'\n"
+        "gem 'fastlane-plugin-firebase_app_distribution'\n",
+      );
       print('📝 Created $platform/Gemfile');
     }
 
     // 4. Write custom Fastfile
     if (platform == 'android') {
-      await _writeAndroidFastfile(appId, flavors);
+      await _writeAndroidFastfile(appId, flavors, brandingType);
     } else {
-      await _writeIosFastfile(appId, flavors);
+      await _writeIosFastfile(appId, flavors, brandingType);
     }
 
-    // 5. Optional fastlane init (Interactive)
+    // 5. Write Documentation
+    await _writeDocumentation(platform, brandingType);
+
+    // 6. Optional fastlane init (Interactive)
     print('\n💡 Basic Fastlane structure is ready.');
     stdout.write('❓ Do you want to run "fastlane init" for advanced store setup (metadata, screenshots)? (y/N): ');
     final input = stdin.readLineSync()?.toLowerCase();
@@ -109,7 +117,11 @@ apple_id("apple@example.com") # TODO: Update your Apple ID
     }
   }
 
-  Future<void> _writeAndroidFastfile(String defaultAppId, Map? flavors) async {
+  Future<void> _writeAndroidFastfile(
+    String defaultAppId,
+    Map? flavors,
+    String brandingType,
+  ) async {
     final fastfile = File('android/fastlane/Fastfile');
     
     String flavorMapping = '';
@@ -227,8 +239,10 @@ platform :android do
 
     sh(build_cmd)
     
+    firebase_app_id = ${brandingType == 'platform' ? 'ENV["FIREBASE_APP_ID_ANDROID_#{flavor.upcase}"]' : 'ENV["FIREBASE_APP_ID_ANDROID"]'}
+
     firebase_app_distribution(
-      app: ENV["FIREBASE_APP_ID_ANDROID"],
+      app: firebase_app_id || ENV["FIREBASE_APP_ID_ANDROID"],
       groups: "testers",
       release_notes: "Bản build obfuscated tự động",
       apk_path: apk_path
@@ -240,7 +254,94 @@ end
     print('📝 Updated android/fastlane/Fastfile');
   }
 
-  Future<void> _writeIosFastfile(String defaultAppId, Map? flavors) async {
+  Future<void> _writeDocumentation(String platform, String brandingType) async {
+    final readme = File('$platform/fastlane/README.md');
+    String content = '';
+
+    if (platform == 'android') {
+      content = '''
+# Fastlane Android Setup
+
+Tài liệu này hướng dẫn cách thiết lập các thông tin cần thiết để sử dụng Fastlane cho Android.
+
+## 1. Thiết lập Google Play Service Account
+Để Fastlane có thể upload bản build lên Google Play, bạn cần tạo một Service Account.
+
+1. Truy cập [Google Cloud Console](https://console.cloud.google.com/).
+2. Chọn project của bạn.
+3. Vào phần **IAM & Admin** > **Service Accounts**.
+4. Chọn **Create Service Account**. Đặt tên (VD: `fastlane-deploy`).
+5. Gán vai trò (Role): **Service Account User** và **Editor** (Hoặc tối thiểu là quyền truy cập vào Google Play).
+6. Sau khi tạo xong, vào tab **Keys**, chọn **Add Key** > **Create new key** > **JSON**.
+7. Tải file JSON về và đổi tên thành `play-store-secret.json`.
+8. Đặt file này vào thư mục `android/fastlane/`.
+9. **Lưu ý**: Cần mời email của service account này vào [Google Play Console](https://play.google.com/console/) với quyền "Admin" hoặc "Release Manager".
+
+## 2. Thiết lập Signing (Keystore)
+Bạn cần cấu hình file `android/key.properties` để Fastlane có thể ký ứng dụng khi build.
+
+File `android/key.properties` nên có nội dung:
+```properties
+storePassword=your_password
+keyPassword=your_password
+keyAlias=your_alias
+storeFile=upload-keystore.jks
+```
+File `upload-keystore.jks` cũng nên được đặt trong thư mục `android/app/`.
+
+## 3. Các lệnh Fastlane thường dùng
+Chạy các lệnh sau trong thư mục `android/`:
+
+- `fastlane beta flavor:dev`: Build và đẩy bản dev lên Firebase App Distribution.
+- `fastlane deploy flavor:prod`: Build và đẩy lên Google Play (Internal track).
+- `fastlane production flavor:prod`: Build và đẩy lên Google Play (Production track).
+
+*Lưu ý: Nếu branding type là `platform`, hãy đảm bảo đã cấu hình các biến môi trường cho Firebase App ID tương ứng (VD: `FIREBASE_APP_ID_ANDROID_DEV`).*
+''';
+    } else {
+      content = '''
+# Fastlane iOS Setup
+
+Tài liệu này hướng dẫn cách thiết lập các thông tin cần thiết để sử dụng Fastlane cho iOS.
+
+## 1. Thiết lập App Store Connect API Key
+Fastlane sử dụng API Key để giao tiếp với App Store Connect mà không cần 2FA thủ công.
+
+1. Truy cập [App Store Connect](https://appstoreconnect.apple.com/access/api).
+2. Chọn tab **Users and Access** > **Integrations** > **App Store Connect API**.
+3. Tạo một API Key mới với quyền **App Manager** hoặc **Admin**.
+4. Tải file `.p8` về.
+5. Cấu hình các biến môi trường hoặc sử dụng plugin `app_store_connect_api_key` trong Fastfile.
+
+## 2. Thiết lập Appfile
+Cập nhật file `ios/fastlane/Appfile` với thông tin của bạn:
+```ruby
+app_identifier("your.bundle.id")
+apple_id("your-apple-id@email.com")
+itc_team_id("your_itc_team_id")
+team_id("your_team_id")
+```
+
+## 3. Các lệnh Fastlane thường dùng
+Chạy các lệnh sau trong thư mục `ios/`:
+
+- `fastlane beta flavor:dev`: Build và đẩy bản dev lên Firebase App Distribution.
+- `fastlane deploy flavor:prod`: Build và đẩy lên TestFlight.
+- `fastlane production flavor:prod`: Build và đẩy lên App Store.
+
+*Lưu ý: Nếu branding type là `platform`, hãy đảm bảo đã cấu hình các biến môi trường cho Firebase App ID tương ứng (VD: `FIREBASE_APP_ID_IOS_DEV`).*
+''';
+    }
+
+    await readme.writeAsString(content);
+    print('📝 Created $platform/fastlane/README.md');
+  }
+
+  Future<void> _writeIosFastfile(
+    String defaultAppId,
+    Map? flavors,
+    String brandingType,
+  ) async {
     final fastfile = File('ios/fastlane/Fastfile');
     
     String flavorMapping = '';
@@ -336,8 +437,10 @@ platform :ios do
     end
     sh(build_cmd)
     
+    firebase_app_id = ${brandingType == 'platform' ? 'ENV["FIREBASE_APP_ID_IOS_#{flavor.upcase}"]' : 'ENV["FIREBASE_APP_ID_IOS"]'}
+
     firebase_app_distribution(
-      app: ENV["FIREBASE_APP_ID_IOS"],
+      app: firebase_app_id || ENV["FIREBASE_APP_ID_IOS"],
       groups: "testers",
       release_notes: "Bản build iOS tự động"
     )
