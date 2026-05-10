@@ -283,7 +283,7 @@ flutter_launcher_icons:
     }
 
     // if (type == 'platform') {
-      await projectService.fixIosAppIconName();
+    await projectService.fixIosAppIconName();
     // }
 
     await projectService.cleanupDefaultAssets();
