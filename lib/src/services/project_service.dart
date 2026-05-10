@@ -1,6 +1,7 @@
 import 'dart:io';
-import 'package:yaml_edit/yaml_edit.dart';
+
 import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 class ProjectService {
   Future<void> updatePubspecYaml(Function(YamlEditor editor) update) async {

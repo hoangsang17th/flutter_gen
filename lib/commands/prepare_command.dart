@@ -1,6 +1,8 @@
 import 'dart:io';
-import 'package:yaml/yaml.dart';
+
 import 'package:finvoras_gen/src/core/flutter_generator.dart';
+import 'package:yaml/yaml.dart';
+
 import 'base_command.dart';
 
 class PrepareCommand extends BaseCommand {
@@ -18,7 +20,8 @@ class PrepareCommand extends BaseCommand {
   final name = 'prepare';
 
   @override
-  final description = 'Prepare project with DI, main setup, and core configurations.';
+  final description =
+      'Prepare project with DI, main setup, and core configurations.';
 
   @override
   Future<void> run() async {
@@ -35,7 +38,8 @@ class PrepareCommand extends BaseCommand {
     // 1. Pre-flight checks
     final pubspec = File('pubspec.yaml');
     if (!pubspec.existsSync()) {
-      throw Exception('pubspec.yaml not found. Please run this command in a Flutter project root.');
+      throw Exception(
+          'pubspec.yaml not found. Please run this command in a Flutter project root.',);
     }
 
     print('🚀 Preparing project...');
@@ -51,7 +55,7 @@ class PrepareCommand extends BaseCommand {
 
     // 5. Update main.dart
     await _updateMainDart();
- 
+
     // 6. Add stack-specific dependencies
     await _addStackDependencies();
 
@@ -60,7 +64,8 @@ class PrepareCommand extends BaseCommand {
   }
 
   Future<void> _setupLocales() async {
-    final config = projectService.readPubspecConfig(['finvoras_gen', 'locales']);
+    final config =
+        projectService.readPubspecConfig(['finvoras_gen', 'locales']);
     String folder = 'assets/locales';
     if (config is Map && config['folder'] is String) {
       folder = config['folder'];
@@ -84,7 +89,7 @@ class PrepareCommand extends BaseCommand {
   Future<void> _setupDI() async {
     await projectService.createDirectories(['lib/src/di']);
     final file = File('lib/src/di/injection.dart');
-    
+
     if (file.existsSync()) return;
 
     final content = '''
@@ -270,7 +275,7 @@ class AppOrchestrator extends StatelessWidget {
         'run',
         'build_runner',
         'build',
-        '--delete-conflicting-outputs'
+        '--delete-conflicting-outputs',
       ]);
     }
   }

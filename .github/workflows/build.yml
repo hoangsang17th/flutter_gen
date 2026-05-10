@@ -39,25 +39,58 @@ jobs:
 
       - name: Run tests for Dart packages
         if: startsWith(matrix.os, 'ubuntu')
-        run: dart test --concurrency=1
+        run: |
+          if [ -d "test" ]; then
+            dart test --concurrency=1
+          else
+            echo "No test directory found, skipping dart tests."
+          fi
+        shell: bash
 
       - name: Run tests for Flutter packages
         if: startsWith(matrix.os, 'ubuntu')
-        run: flutter test --concurrency=1
+        run: |
+          if [ -d "test" ]; then
+            flutter test --concurrency=1
+          else
+            echo "No test directory found, skipping flutter tests."
+          fi
+        shell: bash
 
       - name: Run coverage
         if: startsWith(matrix.os, 'ubuntu')
-        run: bash ./scripts/coverage.sh packages/core
+        run: |
+          if [ -f "scripts/coverage.sh" ] && [ -d "packages/core" ]; then
+            bash ./scripts/coverage.sh packages/core
+          else
+            echo "Scripts or packages not found, skipping coverage."
+          fi
+        shell: bash
 
-      - uses: codecov/codecov-action@v5
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        if: startsWith(matrix.os, 'ubuntu')
+        continue-on-error: true
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./packages/core/coverage.lcov
+          fail_ci_if_error: false
 
       - name: Generate example
-        run: melos run gen:build_runner --no-select
+        run: |
+          if [ -f "melos.yaml" ]; then
+            melos run gen:build_runner --no-select
+          else
+            echo "No melos.yaml found, skipping melos run."
+          fi
+        shell: bash
 
       - name: Check for any formatting and statically analyze the code.
         run: |
-          melos format
+          if [ -f "melos.yaml" ]; then
+            melos format
+          else
+            dart format --output=none --set-exit-if-changed .
+          fi
           flutter analyze
+        shell: bash

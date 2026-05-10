@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:yaml/yaml.dart';
-import 'package:yaml_edit/yaml_edit.dart';
 import 'base_command.dart';
 
 class BrandingCommand extends BaseCommand {
@@ -103,15 +102,17 @@ class BrandingCommand extends BaseCommand {
 
     _validateLogo();
 
-    await _setupFlavorizr(pubspec, content, appName, appId, type);
-    await _setupBrandingFiles();
+    if (type == 'platform') {
+      await _setupFlavorizr(appName, appId);
+    }
+    await _setupBrandingFiles(type);
 
     if (isDryRun) {
       _logWarn('Dry run mode → skip execution');
       return;
     }
 
-    await _addDependencies();
+    await _addDependencies(type);
     await _generateAssets(type);
   }
 
@@ -136,48 +137,43 @@ class BrandingCommand extends BaseCommand {
   // FLAVORIZR (MERGE SAFE)
   // ==============================
   Future<void> _setupFlavorizr(
-    File file,
-    String content,
     String appName,
     String appId,
-    String type,
   ) async {
-    final editor = YamlEditor(content);
-    final doc = loadYaml(content);
-
-    final existing = doc['flavorizr'] ?? {};
-    final flavors = <String, dynamic>{};
-
-    for (final env in environments) {
-      final currentId =
-          (type == 'platform' && env != 'prod') ? '$appId.$env' : appId;
-
-      flavors[env] = {
-        'app': {'name': '$appName ${env.toUpperCase()}'},
-        'android': {
-          'applicationId': currentId,
-          'generateDummyAssets': false,
-        },
-        'ios': {
-          'bundleId': currentId,
-          'generateDummyAssets': false,
-        },
-      };
-    }
-
-    final merged = {
-      ...existing,
-      'ide': 'vscode',
-      'flavors': flavors,
-    };
-
     if (isDryRun) {
       _logInfo('[DRY RUN] Update flavorizr config');
       return;
     }
 
-    editor.update(['flavorizr'], merged);
-    await file.writeAsString(editor.toString());
+    await projectService.updatePubspecYaml((editor) {
+      final doc = loadYaml(editor.toString());
+      final existing = doc['flavorizr'] ?? {};
+      final flavors = <String, dynamic>{};
+
+      for (final env in environments) {
+        final currentId = (env != 'prod') ? '$appId.$env' : appId;
+
+        flavors[env] = {
+          'app': {'name': '$appName ${env.toUpperCase()}'},
+          'android': {
+            'applicationId': currentId,
+            'generateDummyAssets': false,
+          },
+          'ios': {
+            'bundleId': currentId,
+            'generateDummyAssets': false,
+          },
+        };
+      }
+
+      final merged = {
+        ...existing,
+        'ide': 'vscode',
+        'flavors': flavors,
+      };
+
+      editor.update(['flavorizr'], merged);
+    });
 
     _logSuccess('Flavorizr config updated');
   }
@@ -185,7 +181,20 @@ class BrandingCommand extends BaseCommand {
   // ==============================
   // BRANDING FILES (IDEMPOTENT)
   // ==============================
-  Future<void> _setupBrandingFiles() async {
+  Future<void> _setupBrandingFiles(String type) async {
+    if (type == 'behavior') {
+      await _writeIfChanged(
+        'flutter_native_splash.yaml',
+        _buildSplashYaml(),
+      );
+
+      await _writeIfChanged(
+        'flutter_launcher_icons.yaml',
+        _buildIconYaml(),
+      );
+      return;
+    }
+
     for (final env in environments) {
       await _writeIfChanged(
         'flutter_native_splash-$env.yaml',
@@ -241,50 +250,61 @@ flutter_launcher_icons:
   // ==============================
   // DEPENDENCIES
   // ==============================
-  Future<void> _addDependencies() async {
-    await _runCommand('flutter', [
-      'pub',
-      'add',
-      'dev:flutter_flavorizr',
+  Future<void> _addDependencies(String type) async {
+    final deps = [
       'dev:flutter_native_splash',
       'dev:flutter_launcher_icons',
-    ]);
+    ];
+
+    if (type == 'platform') {
+      deps.add('dev:flutter_flavorizr');
+    }
+
+    await flutterService.addDependencies(deps);
   }
 
   // ==============================
   // GENERATION
   // ==============================
   Future<void> _generateAssets(String type) async {
-    // flavorizr
-    await _runCommand('dart', ['run', 'flutter_flavorizr', '-f']);
-
-    for (final env in environments) {
+    if (type == 'behavior') {
       // splash
-      await _runCommand('dart', [
-        'run',
-        'flutter_native_splash:create',
-        '-f',
-        env,
-      ]);
-
-      // copy resource immediately (critical)
-      if (type == 'platform') {
-        await _copyAndroidResources(env);
-      }
+      await flutterService.dart(['run', 'flutter_native_splash:create']);
 
       // icon
-      await _runCommand('dart', [
+      await flutterService.dart([
         'run',
         'flutter_launcher_icons',
         '-f',
-        'flutter_launcher_icons-$env.yaml',
+        'flutter_launcher_icons.yaml',
       ]);
+    } else {
+      // flavorizr
+      await flutterService.dart(['run', 'flutter_flavorizr', '-f']);
+
+      for (final env in environments) {
+        // splash
+        await flutterService.dart([
+          'run',
+          'flutter_native_splash:create',
+          '-f',
+          env,
+        ]);
+
+        // copy resource immediately (critical)
+        await _copyAndroidResources(env);
+
+        // icon
+        await flutterService.dart([
+          'run',
+          'flutter_launcher_icons',
+          '-f',
+          'flutter_launcher_icons-$env.yaml',
+        ]);
+      }
     }
 
-    // if (type == 'platform') {
-      await projectService.fixIosAppIconName();
-    // }
-
+    await projectService.fixIosAppIconName();
     await projectService.cleanupDefaultAssets();
   }
 
@@ -313,23 +333,6 @@ flutter_launcher_icons:
     }
 
     _logSuccess('Copied Android res → $flavor');
-  }
-
-  // ==============================
-  // COMMAND WRAPPER (FAIL FAST)
-  // ==============================
-  Future<void> _runCommand(String cmd, List<String> args) async {
-    _logInfo('$cmd ${args.join(' ')}');
-
-    final process = await Process.start(cmd, args, runInShell: true);
-    await stdout.addStream(process.stdout);
-    await stderr.addStream(process.stderr);
-
-    final code = await process.exitCode;
-
-    if (code != 0) {
-      throw Exception('Command failed: $cmd');
-    }
   }
 
   // ==============================
