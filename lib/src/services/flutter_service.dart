@@ -1,18 +1,28 @@
 import 'dart:io';
 
 class FlutterService {
-  Future<void> run(List<String> arguments,
-      {String? cwd, bool throwOnError = true}) async {
+  Future<void> run(
+    List<String> arguments, {
+    String? cwd,
+    bool throwOnError = true,
+  }) async {
     await _execute('flutter', arguments, cwd: cwd, throwOnError: throwOnError);
   }
 
-  Future<void> dart(List<String> arguments,
-      {String? cwd, bool throwOnError = true}) async {
+  Future<void> dart(
+    List<String> arguments, {
+    String? cwd,
+    bool throwOnError = true,
+  }) async {
     await _execute('dart', arguments, cwd: cwd, throwOnError: throwOnError);
   }
 
-  Future<void> _execute(String command, List<String> arguments,
-      {String? cwd, bool throwOnError = true}) async {
+  Future<void> _execute(
+    String command,
+    List<String> arguments, {
+    String? cwd,
+    bool throwOnError = true,
+  }) async {
     print('🚀 Executing: $command ${arguments.join(' ')}');
     final result = await Process.run(command, arguments, workingDirectory: cwd);
 
@@ -21,7 +31,8 @@ class FlutterService {
       print('❌ Error: $error');
       if (throwOnError) {
         throw Exception(
-            'Command $command failed with exit code ${result.exitCode}');
+          'Command $command failed with exit code ${result.exitCode}',
+        );
       }
     } else {
       final output = result.stdout.toString().trim();

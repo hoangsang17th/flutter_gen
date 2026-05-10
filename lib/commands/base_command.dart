@@ -24,7 +24,8 @@ abstract class BaseCommand extends Command {
       if (result.exitCode != 0) {
         final errorMessage = StringBuffer();
         errorMessage.writeln(
-            '❌ Error executing $command (exit code ${result.exitCode})');
+          '❌ Error executing $command (exit code ${result.exitCode})',
+        );
         if (output.isNotEmpty) {
           errorMessage.writeln('STDOUT:\n$output');
         }

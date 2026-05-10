@@ -19,8 +19,9 @@ Future<String> generateLocales(
       'The value of "finvoras_gen/locales:" is incorrect.',
     );
   }
-  final localeDirectory =
-      Directory(join(pubspecFile.parent.path, config.folder));
+  final localeDirectory = Directory(
+    join(pubspecFile.parent.path, config.folder),
+  );
   if (!localeDirectory.existsSync()) {
     return '';
   }

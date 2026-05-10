@@ -26,10 +26,7 @@ class Pubspec {
 
 @JsonSerializable(disallowUnrecognizedKeys: false, anyMap: true)
 class Flutter {
-  const Flutter({
-    required this.assets,
-    required this.fonts,
-  });
+  const Flutter({required this.assets, required this.fonts});
 
   factory Flutter.fromJson(Map json) => _$FlutterFromJson(json);
 
@@ -148,10 +145,7 @@ class FlutterGenAssets {
 
 @JsonSerializable(anyMap: true)
 class FlutterGenFonts {
-  const FlutterGenFonts({
-    required this.enabled,
-    required this.outputs,
-  });
+  const FlutterGenFonts({required this.enabled, required this.outputs});
 
   factory FlutterGenFonts.fromJson(Map json) => _$FlutterGenFontsFromJson(json);
 
@@ -189,9 +183,7 @@ class FlutterGenIntegrations {
 
 @JsonSerializable(anyMap: true)
 class FlutterGenElementOutputs {
-  const FlutterGenElementOutputs({
-    required this.className,
-  });
+  const FlutterGenElementOutputs({required this.className});
 
   factory FlutterGenElementOutputs.fromJson(Map json) =>
       _$FlutterGenElementOutputsFromJson(json);
@@ -203,8 +195,7 @@ class FlutterGenElementOutputs {
 enum FlutterGenElementAssetsOutputsStyle {
   dotDelimiterStyle('dot-delimiter'),
   snakeCaseStyle('snake-case'),
-  camelCaseStyle('camel-case'),
-  ;
+  camelCaseStyle('camel-case');
 
   const FlutterGenElementAssetsOutputsStyle(this.name);
 

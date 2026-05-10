@@ -1,8 +1,5 @@
 class FlavoredAsset {
-  const FlavoredAsset({
-    required this.path,
-    this.flavors = const {},
-  });
+  const FlavoredAsset({required this.path, this.flavors = const {}});
 
   final String path;
   final Set<String> flavors;

@@ -22,7 +22,8 @@ class PrepareCommand extends BaseCommand {
   final name = 'prepare';
 
   @override
-  final description = 'Prepare project with DI, main setup, and core configurations.';
+  final description =
+      'Prepare project with DI, main setup, and core configurations.';
 
   @override
   Future<void> run() async {
@@ -39,7 +40,9 @@ class PrepareCommand extends BaseCommand {
     // 1. Pre-flight checks
     final pubspec = File('pubspec.yaml');
     if (!pubspec.existsSync()) {
-      throw Exception('pubspec.yaml not found. Please run this command in a Flutter project root.');
+      throw Exception(
+        'pubspec.yaml not found. Please run this command in a Flutter project root.',
+      );
     }
 
     print('🚀 Preparing project...');
@@ -55,7 +58,7 @@ class PrepareCommand extends BaseCommand {
 
     // 5. Update main.dart
     await _updateMainDart();
- 
+
     // 6. Add stack-specific dependencies
     await _addStackDependencies();
 
@@ -64,7 +67,10 @@ class PrepareCommand extends BaseCommand {
   }
 
   Future<void> _setupLocales() async {
-    final config = projectService.readPubspecConfig(['finvoras_gen', 'locales']);
+    final config = projectService.readPubspecConfig([
+      'finvoras_gen',
+      'locales',
+    ]);
     String folder = 'assets/locales';
     if (config is Map && config['folder'] is String) {
       folder = config['folder'];
@@ -75,7 +81,9 @@ class PrepareCommand extends BaseCommand {
     final enFile = File('$folder/en.json');
     if (!enFile.existsSync()) {
       await enFile.writeAsString(
-        TemplateHelper.generate(PrepareTemplates.localeJson, {'appName': 'My App'}),
+        TemplateHelper.generate(PrepareTemplates.localeJson, {
+          'appName': 'My App',
+        }),
       );
       print('📝 Created $folder/en.json');
     }
@@ -83,7 +91,9 @@ class PrepareCommand extends BaseCommand {
     final viFile = File('$folder/vi.json');
     if (!viFile.existsSync()) {
       await viFile.writeAsString(
-        TemplateHelper.generate(PrepareTemplates.localeJson, {'appName': 'Ứng dụng của tôi'}),
+        TemplateHelper.generate(PrepareTemplates.localeJson, {
+          'appName': 'Ứng dụng của tôi',
+        }),
       );
       print('📝 Created $folder/vi.json');
     }
@@ -92,7 +102,7 @@ class PrepareCommand extends BaseCommand {
   Future<void> _setupDI() async {
     await projectService.createDirectories(['lib/src/di']);
     final file = File('lib/src/di/injection.dart');
-    
+
     if (file.existsSync()) return;
 
     await file.writeAsString(PrepareTemplates.injectionDart);
@@ -173,7 +183,7 @@ class PrepareCommand extends BaseCommand {
         'run',
         'build_runner',
         'build',
-        '--delete-conflicting-outputs'
+        '--delete-conflicting-outputs',
       ]);
     }
   }

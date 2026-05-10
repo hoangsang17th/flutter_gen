@@ -28,9 +28,7 @@ Config loadPubspecConfig(File pubspecFile, {File? buildFile}) {
   final pubspecMap = loadYaml(pubspecContent) as Map?;
 
   var mergedMap = mergeMap([defaultMap, pubspecMap]);
-  stdout.writeln(
-    '[FinvorasGen] Reading options from $pubspecLocaleHint',
-  );
+  stdout.writeln('[FinvorasGen] Reading options from $pubspecLocaleHint');
 
   YamlMap? getBuildFileOptions(File file) {
     if (!file.existsSync()) {
@@ -62,9 +60,7 @@ Config loadPubspecConfig(File pubspecFile, {File? buildFile}) {
         final buildLocaleHint = normalize(
           join(basename(buildFile.parent.path), basename(buildFile.path)),
         );
-        stdout.writeln(
-          '[FinvorasGen] Reading options from $buildLocaleHint',
-        );
+        stdout.writeln('[FinvorasGen] Reading options from $buildLocaleHint');
       } else {
         stderr.writeln(
           '[FinvorasGen] Specified ${buildFile.path} as input but the file '

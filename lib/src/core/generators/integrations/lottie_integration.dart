@@ -21,10 +21,7 @@ class LottieIntegration extends Integration {
     'layers', // Must include layers
   ];
 
-  static const _supportedMimeTypes = [
-    'application/json',
-    'application/zip',
-  ];
+  static const _supportedMimeTypes = ['application/json', 'application/zip'];
 
   String get packageExpression => isPackage ? ' = package' : '';
 
