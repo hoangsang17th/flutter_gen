@@ -15,38 +15,21 @@ abstract class BaseCommand extends Command {
     List<String> arguments, {
     bool throwOnError = true,
   }) async {
-    print('Executing: $command ${arguments.join(' ')}');
-    try {
-      final result = await Process.run(command, arguments);
-      final output = result.stdout.toString().trim();
-      final error = result.stderr.toString().trim();
-
-      if (result.exitCode != 0) {
-        final errorMessage = StringBuffer();
-        errorMessage.writeln(
-            '❌ Error executing $command (exit code ${result.exitCode})');
-        if (output.isNotEmpty) {
-          errorMessage.writeln('STDOUT:\n$output');
-        }
-        if (error.isNotEmpty) {
-          errorMessage.writeln('STDERR:\n$error');
-        }
-
-        final msg = errorMessage.toString().trim();
-        print(msg);
-        if (throwOnError) {
-          throw Exception(msg);
-        }
-      } else {
-        if (output.isNotEmpty) {
-          print(output);
-        }
-      }
-    } catch (e) {
-      final errorMessage = '❌ Failed to start $command: $e';
-      print(errorMessage);
-      if (throwOnError) {
-        rethrow;
+    if (command == 'flutter') {
+      await flutterService.run(arguments, throwOnError: throwOnError);
+    } else if (command == 'dart') {
+      await flutterService.dart(arguments, throwOnError: throwOnError);
+    } else {
+      print('🚀 Executing: $command ${arguments.join(' ')}');
+      final process = await Process.start(
+        command,
+        arguments,
+        runInShell: true,
+        mode: ProcessStartMode.inheritStdio,
+      );
+      final exitCode = await process.exitCode;
+      if (exitCode != 0 && throwOnError) {
+        throw Exception('Command $command failed with exit code $exitCode');
       }
     }
   }

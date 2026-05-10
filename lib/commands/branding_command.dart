@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'package:collection/collection.dart';
+import 'package:finvoras_gen/src/templates/templates.dart';
+import 'package:finvoras_gen/src/utils/template_helper.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 import 'base_command.dart';
@@ -76,6 +79,51 @@ class BrandingCommand extends BaseCommand {
   // MAIN FLOW
   // ==============================
   Future<void> _execute() async {
+    final type = argResults!['type'];
+    _logInfo('Type: $type');
+    _logInfo('Envs: $environments');
+
+    if (type == 'behavior') {
+      await _executeBehaviorFlow();
+    } else {
+      await _executePlatformFlow();
+    }
+  }
+
+  Future<void> _executeBehaviorFlow() async {
+    _logInfo('Running Behavior Flow (Dart-only environments)');
+
+    final envDir = Directory('lib/core/config/env');
+    if (!envDir.existsSync()) {
+      await envDir.create(recursive: true);
+    }
+
+    // 1. Create base abstract class
+    await _writeIfChanged(
+      'lib/core/config/env/app_env.dart',
+      TemplateHelper.render(Templates.envBase, {}),
+    );
+
+    // 2. Create implementations
+    for (final env in environments) {
+      final className =
+          '${env[0].toUpperCase()}${env.substring(1).toLowerCase()}Env';
+      await _writeIfChanged(
+        'lib/core/config/env/${env.toLowerCase()}_env.dart',
+        TemplateHelper.render(Templates.envImpl, {
+          'className': className,
+          'envName': env.toUpperCase(),
+          'baseUrl': 'https://api.${env.toLowerCase()}.example.com',
+        }),
+      );
+    }
+
+    _logSuccess('Behavior branding files generated');
+  }
+
+  Future<void> _executePlatformFlow() async {
+    _logInfo('Running Platform Flow (Native flavors + Branding)');
+
     final pubspec = File('pubspec.yaml');
     if (!pubspec.existsSync()) {
       throw Exception('pubspec.yaml not found');
@@ -98,8 +146,6 @@ class BrandingCommand extends BaseCommand {
     final type = argResults!['type'];
 
     _logInfo('App: $appName');
-    _logInfo('Type: $type');
-    _logInfo('Envs: $environments');
 
     _validateLogo();
 
@@ -145,7 +191,7 @@ class BrandingCommand extends BaseCommand {
     final editor = YamlEditor(content);
     final doc = loadYaml(content);
 
-    final existing = doc['flavorizr'] ?? {};
+    final existing = doc['flavorizr'] is Map ? Map.from(doc['flavorizr']) : {};
     final flavors = <String, dynamic>{};
 
     for (final env in environments) {
@@ -189,34 +235,20 @@ class BrandingCommand extends BaseCommand {
     for (final env in environments) {
       await _writeIfChanged(
         'flutter_native_splash-$env.yaml',
-        _buildSplashYaml(),
+        TemplateHelper.render(Templates.splashYaml, {
+          'color': '#ffffff',
+          'logoPath': logoPath,
+        }),
       );
 
       await _writeIfChanged(
         'flutter_launcher_icons-$env.yaml',
-        _buildIconYaml(),
+        TemplateHelper.render(Templates.launcherIconsYaml, {
+          'logoPath': logoPath,
+        }),
       );
     }
   }
-
-  String _buildSplashYaml() => '''
-flutter_native_splash:
-  color: "#ffffff"
-  image: $logoPath
-  fullscreen: true
-
-  android_12:
-    color: "#ffffff"
-    image: $logoPath
-    icon_background_color: "#ffffff"
-''';
-
-  String _buildIconYaml() => '''
-flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "$logoPath"
-''';
 
   Future<void> _writeIfChanged(String path, String content) async {
     final file = File(path);
@@ -242,13 +274,14 @@ flutter_launcher_icons:
   // DEPENDENCIES
   // ==============================
   Future<void> _addDependencies() async {
-    await _runCommand('flutter', [
+    await runCommand('flutter', [
       'pub',
       'add',
       'dev:flutter_flavorizr',
       'dev:flutter_native_splash',
       'dev:flutter_launcher_icons',
     ]);
+    await flutterService.pubGet();
   }
 
   // ==============================
@@ -256,15 +289,14 @@ flutter_launcher_icons:
   // ==============================
   Future<void> _generateAssets(String type) async {
     // flavorizr
-    await _runCommand('dart', ['run', 'flutter_flavorizr', '-f']);
+    await runCommand('dart', ['run', 'flutter_flavorizr', '-f']);
 
     for (final env in environments) {
       // splash
-      await _runCommand('dart', [
+      await runCommand('dart', [
         'run',
         'flutter_native_splash:create',
-        '-f',
-        env,
+        '--path=flutter_native_splash-$env.yaml',
       ]);
 
       // copy resource immediately (critical)
@@ -273,7 +305,7 @@ flutter_launcher_icons:
       }
 
       // icon
-      await _runCommand('dart', [
+      await runCommand('dart', [
         'run',
         'flutter_launcher_icons',
         '-f',
@@ -297,39 +329,54 @@ flutter_launcher_icons:
 
     if (!src.existsSync()) return;
 
-    if (dest.existsSync()) {
-      await dest.delete(recursive: true);
+    if (!dest.existsSync()) {
+      await dest.create(recursive: true);
     }
 
+    // 1. Identify all source relative paths
+    final srcRelativePaths = <String>{};
+    await for (final entity in src.list(recursive: true)) {
+      srcRelativePaths.add(entity.path.replaceFirst(src.path, ''));
+    }
+
+    // 2. Delete stale files/folders in dest that are not in src
+    if (dest.existsSync()) {
+      // List all entities in reverse order (deepest first) to safely delete
+      final destEntities = await dest.list(recursive: true).toList();
+      for (final entity in destEntities.reversed) {
+        final relativePath = entity.path.replaceFirst(dest.path, '');
+        if (!srcRelativePaths.contains(relativePath)) {
+          await entity.delete(recursive: true);
+        }
+      }
+    }
+
+    // 3. Sync files from src to dest
     await for (final entity in src.list(recursive: true)) {
       final newPath = entity.path.replaceFirst(src.path, dest.path);
 
       if (entity is Directory) {
         await Directory(newPath).create(recursive: true);
       } else if (entity is File) {
-        await File(newPath).create(recursive: true);
-        await entity.copy(newPath);
+        final destFile = File(newPath);
+        bool shouldCopy = true;
+
+        if (destFile.existsSync()) {
+          final srcBytes = await entity.readAsBytes();
+          final destBytes = await destFile.readAsBytes();
+          if (const ListEquality().equals(srcBytes, destBytes)) {
+            shouldCopy = false;
+          }
+        }
+
+        if (shouldCopy) {
+          await destFile.create(recursive: true);
+          await entity.copy(newPath);
+        }
       }
     }
 
     _logSuccess('Copied Android res → $flavor');
-  }
-
-  // ==============================
-  // COMMAND WRAPPER (FAIL FAST)
-  // ==============================
-  Future<void> _runCommand(String cmd, List<String> args) async {
-    _logInfo('$cmd ${args.join(' ')}');
-
-    final process = await Process.start(cmd, args, runInShell: true);
-    await stdout.addStream(process.stdout);
-    await stderr.addStream(process.stderr);
-
-    final code = await process.exitCode;
-
-    if (code != 0) {
-      throw Exception('Command failed: $cmd');
-    }
   }
 
   // ==============================
