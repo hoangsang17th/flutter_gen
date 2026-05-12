@@ -186,6 +186,17 @@ class BrandingCommand extends BaseCommand {
     }
 
     logSuccess('Dart flavors setup completed');
+
+    // 3. Create lib/app.dart
+    final appTemplate = await templateService.readTemplate('app.dart');
+    await _writeIfChanged('lib/app.dart', appTemplate);
+
+    // 4. Create lib/pages/my_home_page.dart
+    final pagesDir = Directory('lib/pages');
+    if (!pagesDir.existsSync()) await pagesDir.create(recursive: true);
+    
+    final homeTemplate = await templateService.readTemplate('my_home_page.dart');
+    await _writeIfChanged('lib/pages/my_home_page.dart', homeTemplate);
   }
 
   // ==============================
