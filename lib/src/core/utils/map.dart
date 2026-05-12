@@ -1,21 +1,21 @@
 // Copy from https://pub.dev/packages/merge_map
 
 /// Exposes the [mergeMap] function, which... merges Maps.
-_copyValues<K, V>(
-  Map<K, V> from,
-  Map<K, V> to,
+_copyValues(
+  Map from,
+  Map to,
   bool recursive,
   bool acceptNull,
 ) {
   for (final key in from.keys) {
-    if (from[key] is Map<K, V> && recursive) {
-      if (to[key] is! Map<K, V>) {
-        to[key] = <K, V>{} as V;
+    if (from[key] is Map && recursive) {
+      if (to[key] is! Map) {
+        to[key] = {};
       }
       _copyValues(from[key] as Map, to[key] as Map, recursive, acceptNull);
     } else {
       if (from[key] != null || acceptNull) {
-        to[key] = from[key] as V;
+        to[key] = from[key];
       }
     }
   }

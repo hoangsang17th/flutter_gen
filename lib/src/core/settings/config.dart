@@ -4,7 +4,6 @@ import 'package:finvoras_gen/src/core/settings/config_default.dart';
 import 'package:finvoras_gen/src/core/settings/pubspec.dart';
 import 'package:finvoras_gen/src/core/utils/error.dart';
 import 'package:finvoras_gen/src/core/utils/map.dart';
-import 'package:finvoras_gen/src/version/version.gen.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
@@ -19,8 +18,6 @@ Config loadPubspecConfig(File pubspecFile, {File? buildFile}) {
   final pubspecLocaleHint = normalize(
     join(basename(pubspecFile.parent.path), basename(pubspecFile.path)),
   );
-
-  stdout.writeln('[FinvorasGen] v$packageVersion Loading ...');
 
   final defaultMap = loadYaml(configDefaultYamlContent) as Map?;
 
