@@ -240,6 +240,8 @@ class BrandingCommand extends BaseCommand {
   // ==============================
   Future<void> _generateAssets() async {
     if (isPlatform) {
+      await projectService.cleanupDefaultAssets();
+      await projectService.fixIosAppIconName();
       await _runCommand('dart', ['run', 'flutter_flavorizr', '--force']);
     }
 
@@ -259,9 +261,6 @@ class BrandingCommand extends BaseCommand {
       if (env.isNotEmpty) iconArgs.addAll(['-f', 'flutter_launcher_icons$suffix.yaml']);
       await _runCommand('dart', iconArgs);
     }
-
-    await projectService.fixIosAppIconName();
-    await projectService.cleanupDefaultAssets();
   }
 
   // ==============================

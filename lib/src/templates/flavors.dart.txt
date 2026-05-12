@@ -1,0 +1,21 @@
+enum Flavor {
+{{FLAVOR_ENUM_VALUES}}
+}
+
+class F {
+  static late final Flavor appFlavor;
+
+  static String get name => appFlavor.name;
+
+  static String get title {
+    switch (appFlavor) {
+{{FLAVOR_TITLE_CASES}}
+    }
+  }
+
+  static String get baseUrl {
+    switch (appFlavor) {
+{{FLAVOR_BASE_URL_CASES}}
+    }
+  }
+}
