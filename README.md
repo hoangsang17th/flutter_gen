@@ -14,7 +14,9 @@ git clone <repo-url> finvoras_gen
 cd finvoras_gen
 
 # Cài đặt global
+dart pub global deactivate finvoras_gen
 dart pub global activate --source path .
+finvoras_gen refresh
 ```
 
 Đảm bảo `~/.pub-cache/bin` có trong `PATH` của bạn.
@@ -93,36 +95,41 @@ finvoras_gen branding --yes
 
 ---
 
-### `prepare` — Setup code, DI & localization
+### `prepare` — Profile-based project bootstrap
 
-Chuẩn bị cấu trúc code, thiết lập Dependency Injection, sinh file ngôn ngữ và cấu hình khởi tạo cho dự án.
+`prepare` hỗ trợ 2 profile:
+
+- `generic`: giữ hành vi scaffold cũ (stack bloc/getx).
+- `finvoras_mobile`: one-shot bootstrap cho monorepo kiểu `finvoras/mobile`.
 
 ```sh
-# Mặc định: stack bloc + go_router
+# Backward-compatible (generic profile)
 finvoras_gen prepare
-
-# Chọn stack GetX
 finvoras_gen prepare --stack getx
+
+# Monorepo profile (runtime bắt buộc)
+finvoras_gen prepare --profile finvoras_mobile --runtime fvm --workspace all --yes
 ```
 
 **Options:**
 
 | Flag | Viết tắt | Mặc định | Mô tả |
 |---|---|---|---|
-| `--stack` | `-s` | `bloc` | Lựa chọn state management: `bloc` (kèm `go_router`) hoặc `getx` |
+| `--profile` | | `generic` | `generic` hoặc `finvoras_mobile` |
+| `--stack` | `-s` | `bloc` | Chỉ áp dụng cho `generic` |
+| `--runtime` | | | Bắt buộc với `finvoras_mobile`: `flutter` hoặc `fvm` |
+| `--workspace` | | `all` | `all`, `root`, hoặc danh sách: `packages/a,packages/b` |
+| `--yes` | `-y` | `false` | Chạy non-interactive |
 
-**Các bước tự động thực hiện:**
+**Pipeline của `finvoras_mobile`:**
 
-1. Tạo thư mục `assets/locales/` và file JSON mẫu: `en.json`, `vi.json`.
-2. Tạo `lib/src/di/injection.dart` (GetIt + Injectable).
-3. Tạo `lib/core/config/prepare.dart` chứa logic khởi tạo (Splash screen, System UI, DI, Services init...).
-4. Cập nhật `lib/main.dart`:
-   - Bao bọc ứng dụng bằng `AppOrchestrator`.
-   - Setup `MaterialApp.router` + `GoRouter` (nếu dùng bloc) hoặc `GetMaterialApp` (nếu dùng getx).
-5. Thêm dependencies cần thiết theo stack đã chọn.
-6. Chạy `flutter pub get`.
-7. Chạy `finvoras_gen assets` nội bộ để sinh code translation.
-8. Chạy `build_runner` để sinh code DI.
+1. Rewrite file critical theo profile (`lib/main.dart`, `lib/core/configs/di.dart`, `lib/core/configs/prepare_environment.dart`).
+2. Chuẩn hoá cấu hình monorepo trong `pubspec.yaml` (`workspace`, local package paths, `finvoras_gen`, `melos.scripts`).
+3. Root dependency sync (`pub get`).
+4. Package dependency sync cho workspace đã chọn.
+5. Codegen package (`build_runner`, `finvoras_gen assets` nếu package có cấu hình).
+6. Codegen root.
+7. Verify + in summary `done/failed/skipped` theo từng step.
 
 ---
 
@@ -170,6 +177,7 @@ finvoras_gen fastlane
 4. **Tùy chọn nâng cao**: Sau khi setup cơ bản, bạn có thể chọn chạy `fastlane init` để thiết lập nâng cao (metadata, screenshots).
 
 **Đặc điểm nổi bật:**
+
 - **Auto Flow**: Tự động lấy `app_id` từ `pubspec.yaml` để cấu hình `Appfile`.
 - **Đa nền tảng**: Hỗ trợ đầy đủ cho cả Android và iOS trong cùng một lệnh.
 - **Hỗ trợ Flavor**: Tự động nhận diện nếu dự án có sử dụng flavors. Mặc định sẽ build flavor `prod`.

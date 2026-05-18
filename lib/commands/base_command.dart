@@ -5,12 +5,14 @@ import '../src/services/flutter_service.dart';
 import '../src/services/git_service.dart';
 import '../src/services/project_service.dart';
 import '../src/services/template_service.dart';
+import '../src/services/workspace_service.dart';
 
 abstract class BaseCommand extends Command {
   final flutterService = FlutterService();
   final gitService = GitService();
   final projectService = ProjectService();
   final templateService = TemplateService();
+  final workspaceService = WorkspaceService();
 
   Future<void> runCommand(
     String command,
@@ -26,7 +28,8 @@ abstract class BaseCommand extends Command {
       if (result.exitCode != 0) {
         final errorMessage = StringBuffer();
         errorMessage.writeln(
-            '❌ Error executing $command (exit code ${result.exitCode})');
+          '❌ Error executing $command (exit code ${result.exitCode})',
+        );
         if (output.isNotEmpty) {
           errorMessage.writeln('STDOUT:\n$output');
         }

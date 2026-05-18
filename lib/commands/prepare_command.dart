@@ -1,93 +1,345 @@
 import 'dart:io';
-import 'package:yaml/yaml.dart';
+
 import 'package:finvoras_gen/src/core/flutter_generator.dart';
+import 'package:finvoras_gen/src/services/flutter_service.dart';
+
 import 'base_command.dart';
 
 class PrepareCommand extends BaseCommand {
   PrepareCommand() {
-    argParser.addOption(
-      'stack',
-      abbr: 's',
-      defaultsTo: 'bloc',
-      allowed: ['bloc', 'getx'],
-      help: 'Choose the state management stack (bloc or getx)',
-    );
+    argParser
+      ..addOption(
+        'stack',
+        abbr: 's',
+        defaultsTo: 'bloc',
+        allowed: ['bloc', 'getx'],
+        help: 'State management stack for generic profile.',
+      )
+      ..addOption(
+        'profile',
+        defaultsTo: 'generic',
+        allowed: ['generic', 'finvoras_mobile'],
+        help: 'Preparation profile.',
+      )
+      ..addOption(
+        'runtime',
+        allowed: ['flutter', 'fvm'],
+        help: 'Runtime for flutter commands. Required for finvoras_mobile.',
+      )
+      ..addOption(
+        'workspace',
+        defaultsTo: 'all',
+        help: 'Workspace target: all|root|packages/a,packages/b',
+      )
+      ..addFlag(
+        'yes',
+        abbr: 'y',
+        negatable: false,
+        help: 'Non-interactive mode.',
+      );
   }
 
   @override
   final name = 'prepare';
 
   @override
-  final description = 'Prepare project with DI, main setup, and core configurations.';
+  final description =
+      'Prepare project with profile-based setup and workspace bootstrap.';
 
   @override
   Future<void> run() async {
     try {
       await _execute();
-      print('\n✅ Project prepared successfully!');
+      logSuccess('Project prepared successfully');
     } catch (e) {
-      print('\n💥 Preparation failed!');
-      print(e);
+      logError('Preparation failed: $e');
     }
   }
 
   Future<void> _execute() async {
-    // 1. Pre-flight checks
     final pubspec = File('pubspec.yaml');
     if (!pubspec.existsSync()) {
-      throw Exception('pubspec.yaml not found. Please run this command in a Flutter project root.');
+      throw Exception(
+        'pubspec.yaml not found. Please run this command in project root.',
+      );
     }
 
-    print('🚀 Preparing project...');
+    final profile = argResults?['profile'] as String? ?? 'generic';
+    if (profile == 'finvoras_mobile') {
+      await _prepareFinvorasMobile();
+      return;
+    }
+    await _prepareGeneric();
+  }
 
-    // 2. Create Language JSON
+  Future<void> _prepareGeneric() async {
+    final stack = argResults?['stack'] as String? ?? 'bloc';
+    logInfo('Preparing project with generic profile (stack: $stack)...');
+
     await _setupLocales();
-
-    // 3. Setup DI
     await _setupDI();
-
-    // 4. Setup Core Config (prepare.dart)
     await _setupPrepareConfig();
-
-    // 5. Update main.dart
-    await _updateMainDart();
- 
-    // 6. Add stack-specific dependencies
-    await _addStackDependencies();
-
-    // 7. Generate Translation & DI
+    await _updateMainDart(stack: stack);
+    await _addStackDependencies(stack: stack);
     await _generateFiles();
   }
 
+  Future<void> _prepareFinvorasMobile() async {
+    final runtimeArg = argResults?['runtime'] as String?;
+    if (runtimeArg == null) {
+      throw Exception(
+        'Missing --runtime. For finvoras_mobile, use --runtime flutter|fvm',
+      );
+    }
+
+    final runtime =
+        runtimeArg == 'fvm' ? FlutterRuntime.fvm : FlutterRuntime.flutter;
+    flutterService.setRuntime(runtime);
+
+    final workspaceOption = argResults?['workspace'] as String? ?? 'all';
+    logInfo(
+      'Preparing finvoras_mobile (runtime: $runtimeArg, workspace: $workspaceOption)',
+    );
+
+    await _rewriteFinvorasMobileCoreFiles();
+    await _normalizePubspecForMonorepo();
+
+    final workspacePackages = workspaceService.readWorkspacePackages();
+    final selectedPackages = workspaceService.selectTargets(
+      workspaceOption: workspaceOption,
+      workspacePackages: workspacePackages,
+    );
+
+    final report = <_StepReport>[];
+
+    // 1) root deps sync
+    await _trackStep(report, 'root:pub_get', () async {
+      await flutterService.pubGet();
+    });
+
+    // 2) package deps sync
+    for (final pkg in selectedPackages) {
+      await _trackStep(report, '$pkg:pub_get', () async {
+        if (!workspaceService.isPackageDirectory(pkg)) {
+          throw Exception('Missing package directory: $pkg');
+        }
+        await flutterService.pubGet(cwd: pkg);
+      });
+    }
+
+    // 3) codegen package
+    for (final pkg in selectedPackages) {
+      if (!workspaceService.isPackageDirectory(pkg)) {
+        report.add(_StepReport.skipped('$pkg:codegen', 'missing package'));
+        continue;
+      }
+
+      if (workspaceService.hasBuildRunner(pkg)) {
+        await _trackStep(
+          report,
+          '$pkg:build_runner',
+          () async {
+            await flutterService.runBuildRunner(cwd: pkg);
+          },
+          continueOnFailure: true,
+        );
+      } else {
+        report.add(_StepReport.skipped('$pkg:build_runner', 'no build_runner'));
+      }
+
+      if (workspaceService.hasFinvorasGen(pkg)) {
+        await _trackStep(
+          report,
+          '$pkg:finvoras_assets',
+          () async {
+            await flutterService.runFinvorasAssets(cwd: pkg);
+          },
+          continueOnFailure: true,
+        );
+      } else {
+        report.add(
+          _StepReport.skipped('$pkg:finvoras_assets', 'no finvoras_gen'),
+        );
+      }
+    }
+
+    // 4) codegen root
+    if (workspaceService.hasBuildRunner('.')) {
+      await _trackStep(
+        report,
+        'root:build_runner',
+        () async {
+          await flutterService.runBuildRunner();
+        },
+        continueOnFailure: true,
+      );
+    } else {
+      report.add(_StepReport.skipped('root:build_runner', 'no build_runner'));
+    }
+    if (workspaceService.hasFinvorasGen('.')) {
+      await _trackStep(
+        report,
+        'root:finvoras_assets',
+        () async {
+          await flutterService.runFinvorasAssets();
+        },
+        continueOnFailure: true,
+      );
+    } else {
+      report
+          .add(_StepReport.skipped('root:finvoras_assets', 'no finvoras_gen'));
+    }
+
+    // 5) verify
+    await _trackStep(
+      report,
+      'verify',
+      () async {
+        _verifyFinvorasFiles();
+      },
+      continueOnFailure: true,
+    );
+
+    _printSummary(report);
+  }
+
+  Future<void> _rewriteFinvorasMobileCoreFiles() async {
+    await projectService.createDirectories(['lib/core/configs/bootstrap']);
+    await File('lib/main.dart').writeAsString(_mainDartTemplate);
+    await File('lib/core/configs/di.dart').writeAsString(_diTemplate);
+    await File('lib/core/configs/prepare_environment.dart')
+        .writeAsString(_prepareEnvironmentTemplate);
+    logInfo('Rewrote critical files for finvoras_mobile profile');
+  }
+
+  Future<void> _normalizePubspecForMonorepo() async {
+    final workspace = workspaceService.readWorkspacePackages();
+    final packageNames = workspace
+        .map((path) => path.split('/').last.trim())
+        .where((name) => name.isNotEmpty)
+        .toList();
+
+    await projectService.updatePubspecYaml((editor) {
+      if (workspace.isNotEmpty) {
+        editor.update(['workspace'], workspace);
+      }
+
+      for (final pkg in packageNames) {
+        editor.update(['dependencies', pkg], {'path': 'packages/$pkg'});
+      }
+
+      editor.update([
+        'finvoras_gen',
+      ], {
+        'output': 'lib/generated/',
+        'line_length': 80,
+        'assets': {
+          'enabled': true,
+          'outputs': {'class_name': 'AppAssets'},
+        },
+        'locales': {
+          'enabled': true,
+          'folder': 'assets/locales',
+          'outputs': {
+            'translation_name': 'AppTranslation',
+            'keys_name': 'AppLocalesKeys',
+          },
+        },
+      });
+
+      editor.update([
+        'melos',
+        'scripts',
+        'get',
+      ], {
+        'run': 'melos exec -- "rm -f pubspec.lock && flutter pub get"',
+        'description': 'Delete lock file and get all dependencies',
+      });
+      editor.update([
+        'melos',
+        'scripts',
+        'analyze',
+      ], {
+        'run': 'melos exec -- "flutter analyze"',
+        'description': 'Run `flutter analyze` in all packages',
+      });
+      editor.update([
+        'melos',
+        'scripts',
+        'build_assets',
+      ], {
+        'run':
+            'melos exec --concurrency=1 --dir-exists=assets -- "flutter pub get && if grep -q \\"build_runner\\" pubspec.yaml; then flutter pub run build_runner build --delete-conflicting-outputs; else echo \'Skipping build_runner\'; fi && finvoras_gen -c pubspec.yaml"',
+        'description': 'Generate assets code',
+      });
+    });
+  }
+
+  void _verifyFinvorasFiles() {
+    final required = [
+      'lib/main.dart',
+      'lib/core/configs/di.dart',
+      'lib/core/configs/prepare_environment.dart',
+      'pubspec.yaml',
+    ];
+    for (final path in required) {
+      if (!File(path).existsSync()) {
+        throw Exception('Missing required file after prepare: $path');
+      }
+    }
+  }
+
+  Future<void> _trackStep(
+    List<_StepReport> reports,
+    String name,
+    Future<void> Function() action, {
+    bool continueOnFailure = false,
+  }) async {
+    try {
+      await action();
+      reports.add(_StepReport.done(name));
+    } catch (e) {
+      reports.add(_StepReport.failed(name, e.toString()));
+      if (!continueOnFailure) rethrow;
+    }
+  }
+
+  void _printSummary(List<_StepReport> reports) {
+    print('\n=== Prepare Summary ===');
+    for (final item in reports) {
+      print(
+        '[${item.status}] ${item.step}${item.message == null ? '' : ' - ${item.message}'}',
+      );
+    }
+    print('=======================');
+  }
+
   Future<void> _setupLocales() async {
-    final config = projectService.readPubspecConfig(['finvoras_gen', 'locales']);
-    String folder = 'assets/locales';
+    final config =
+        projectService.readPubspecConfig(['finvoras_gen', 'locales']);
+    var folder = 'assets/locales';
     if (config is Map && config['folder'] is String) {
-      folder = config['folder'];
+      folder = config['folder'] as String;
     }
 
     await projectService.createDirectories([folder]);
-
     final enFile = File('$folder/en.json');
     if (!enFile.existsSync()) {
       await enFile.writeAsString('{\n  "app_name": "My App"\n}\n');
-      print('📝 Created $folder/en.json');
+      logInfo('Created $folder/en.json');
     }
-
     final viFile = File('$folder/vi.json');
     if (!viFile.existsSync()) {
-      await viFile.writeAsString('{\n  "app_name": "Ứng dụng của tôi"\n}\n');
-      print('📝 Created $folder/vi.json');
+      await viFile.writeAsString('{\n  "app_name": "Ung dung cua toi"\n}\n');
+      logInfo('Created $folder/vi.json');
     }
   }
 
   Future<void> _setupDI() async {
     await projectService.createDirectories(['lib/src/di']);
     final file = File('lib/src/di/injection.dart');
-    
     if (file.existsSync()) return;
-
-    final content = '''
+    await file.writeAsString('''
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'injection.config.dart';
@@ -96,182 +348,172 @@ final getIt = GetIt.instance;
 
 @InjectableInit()
 Future<void> configureDependencies() async => getIt.init();
-''';
-    await file.writeAsString(content);
-    print('📝 Created lib/src/di/injection.dart');
+''');
+    logInfo('Created lib/src/di/injection.dart');
   }
 
   Future<void> _setupPrepareConfig() async {
     await projectService.createDirectories(['lib/core/config']);
     final file = File('lib/core/config/prepare.dart');
-
-    final content = '''
+    await file.writeAsString('''
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-// TODO: Import your services and DI here
-// import '../../src/di/injection.dart';
 
 Future<void> prepareApp(WidgetsBinding binding) async {
-  // 1. Error widget builder
   ErrorWidget.builder = (_) => const SizedBox.shrink();
-
-  // 2. Preserve splash screen
   FlutterNativeSplash.preserve(widgetsBinding: binding);
-
-  // 3. System UI Mode
   await SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.manual,
     overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top],
   );
-
-  // 4. Dependency Injection
-  // await configureDependencies();
-  // registerAppOrchestratorDependencies();
-  
-  // 5. Core Services Initialization
-  // await AppPathService.instance.init();
-  // await AppKeyStorage.instance.init();
-  // await AppActions.instance.init();
-
-  // 6. Preferred Orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-
-  // 7. Remove splash screen
   FlutterNativeSplash.remove();
 }
-''';
-
-    await file.writeAsString(content);
-    print('📝 Created lib/core/config/prepare.dart');
+''');
+    logInfo('Rewrote lib/core/config/prepare.dart');
   }
 
-  Future<void> _updateMainDart() async {
+  Future<void> _updateMainDart({required String stack}) async {
     final mainFile = File('lib/main.dart');
-    final stack = argResults?['stack'] as String? ?? 'bloc';
+    final import = stack == 'bloc'
+        ? "import 'package:go_router/go_router.dart';"
+        : "import 'package:get/get.dart';";
+    final app = stack == 'bloc'
+        ? 'MaterialApp.router(routerConfig: _router)'
+        : 'GetMaterialApp(home: const Scaffold(body: Center(child: Text(\'App Prepared with GetX!\'))))';
 
-    String materialApp;
-    if (stack == 'bloc') {
-      materialApp = '''
-      child: MaterialApp.router(
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        routerConfig: _router,
-      ),''';
-    } else {
-      materialApp = '''
-      child: GetMaterialApp(
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        home: const Scaffold(
-          body: Center(child: Text('App Prepared with GetX!')),
-        ),
-      ),''';
-    }
-
-    final content = '''
+    await mainFile.writeAsString('''
 import 'package:flutter/material.dart';
-${stack == 'bloc' ? "import 'package:go_router/go_router.dart';" : "import 'package:get/get.dart';"}
+$import
 import 'core/config/prepare.dart';
 
 void main() async {
   final binding = WidgetsFlutterBinding.ensureInitialized();
-  
   await prepareApp(binding);
-  
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return AppOrchestrator(
-$materialApp
-    );
-  }
+  Widget build(BuildContext context) => $app;
 }
 
-${stack == 'bloc' ? """
-final _router = GoRouter(
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const Scaffold(
-        body: Center(child: Text('App Prepared with Bloc & GoRouter!')),
-      ),
-    ),
-  ],
-);
-""" : ""}
-
-class AppOrchestrator extends StatelessWidget {
-  final Widget child;
-  const AppOrchestrator({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    // AppOrchestrator wraps the main app to provide global providers or configurations
-    return child;
-  }
-}
-''';
-
-    await mainFile.writeAsString(content);
-    print('📝 Updated lib/main.dart (stack: $stack)');
+${stack == 'bloc' ? "final _router = GoRouter(routes: [GoRoute(path: '/', builder: (_, __) => const SizedBox())]);" : ""}
+''');
+    logInfo('Rewrote lib/main.dart (generic profile, stack: $stack)');
   }
 
-  Future<void> _addStackDependencies() async {
-    final stack = argResults?['stack'] as String? ?? 'bloc';
-    final List<String> deps = [];
-
+  Future<void> _addStackDependencies({required String stack}) async {
+    final deps = <String>[];
     if (stack == 'bloc') {
       deps.addAll(['flutter_bloc', 'go_router']);
-    } else if (stack == 'getx') {
+    } else {
       deps.add('get');
     }
-
     if (deps.isNotEmpty) {
-      print('📦 Adding stack dependencies: ${deps.join(', ')}...');
       await flutterService.addDependencies(deps);
     }
   }
 
   Future<void> _generateFiles() async {
-    print('🔄 Generating translation and DI files...');
-
-    // 1. Run pub get
     await flutterService.pubGet();
-
-    // 2. Generate Translations using internal FlutterGenerator
-    print('🏃 Generating translations...');
-    final generator = FlutterGenerator(File('pubspec.yaml'));
-    await generator.build();
-
-    // 3. Run build_runner for DI
-    final pubspecContent = await File('pubspec.yaml').readAsString();
-    final pubspec = loadYaml(pubspecContent);
-    final devDeps = pubspec['dev_dependencies'] as Map?;
-
-    if (devDeps?.containsKey('build_runner') ?? false) {
-      print('🏃 Running build_runner for DI...');
-      await flutterService.run([
-        'pub',
-        'run',
-        'build_runner',
-        'build',
-        '--delete-conflicting-outputs'
-      ]);
+    await FlutterGenerator(File('pubspec.yaml')).build();
+    if (workspaceService.hasBuildRunner('.')) {
+      await flutterService.runBuildRunner();
     }
   }
 }
+
+class _StepReport {
+  _StepReport(this.step, this.status, [this.message]);
+
+  factory _StepReport.done(String step) => _StepReport(step, 'done');
+  factory _StepReport.failed(String step, String message) =>
+      _StepReport(step, 'failed', message);
+  factory _StepReport.skipped(String step, String reason) =>
+      _StepReport(step, 'skipped', reason);
+
+  final String step;
+  final String status;
+  final String? message;
+}
+
+const String _mainDartTemplate = '''
+import 'dart:async';
+
+import 'package:app_core/app_core.dart';
+import 'package:finvoras/core/configs/di.dart';
+import 'package:finvoras/core/configs/prepare_environment.dart';
+import 'package:finvoras/flavors.dart';
+import 'package:finvoras/main_app.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+
+Future<void> main() async {
+  AppFlavorConfig.flavor = Flavor.values.firstWhere((f) => f.name == appFlavor);
+  final shouldEnableAnalytics =
+      AppFlavorConfig.flavor == Flavor.qa || AppFlavorConfig.flavor == Flavor.prod;
+  await AppAnalytics.instance.bootstrap(
+    options: AnalyticsBootstrapOptions(
+      enableSentry: shouldEnableAnalytics,
+      enableCrashlytics: shouldEnableAnalytics,
+      configureSentry: _configureSentry,
+    ),
+    appRunner: _runApplication,
+  );
+}
+
+void _configureSentry(SentryFlutterOptions options) {
+  options.dsn = AppFlavorConfig.sentryDsn;
+  options.tracesSampleRate = AppFlavorConfig.tracesSampleRate;
+  options.environment = AppFlavorConfig.flavor.name;
+  options.attachStacktrace = true;
+  options.attachThreads = true;
+  options.sendDefaultPii = true;
+  options.enableAutoPerformanceTracing = AppFlavorConfig.isTrackingPerformance;
+  options.enableAutoSessionTracking = true;
+  options.debug = kDebugMode;
+}
+
+Future<void> _runApplication() async {
+  ErrorWidget.builder = (_) => const SizedBox.shrink();
+  configureDependencies();
+  await prepareEnvironment();
+  if (AppAnalytics.instance.isSentryEnabled) {
+    runApp(SentryWidget(child: const MainApp()));
+    return;
+  }
+  runApp(const MainApp());
+}
+''';
+
+const String _diTemplate = r'''
+import 'package:get_it/get_it.dart';
+import 'package:injectable/injectable.dart';
+import 'package:finvoras/core/configs/di.config.dart';
+
+final getIt = GetIt.instance;
+
+@InjectableInit(initializerName: r'$initGetIt')
+void configureDependencies() => $initGetIt(getIt);
+''';
+
+const String _prepareEnvironmentTemplate = '''
+import 'package:app_core/app_core.dart';
+import 'package:app_orchestrator/app_orchestrator.dart';
+import 'package:finvoras/core/configs/di.dart';
+
+Future<void> prepareEnvironment() async {
+  await AppPathService.instance.init();
+  await AppKeyStorage.instance.init(
+    pinStorageToken: AppSecrets.keyStoragePinToken,
+  );
+  await registerAppOrchestratorDependencies(getIt);
+}
+''';

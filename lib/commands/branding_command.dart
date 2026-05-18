@@ -65,7 +65,11 @@ class BrandingCommand extends BaseCommand {
   // ==============================
   List<String> _parseEnvs() {
     final raw = argResults?['envs'] as String? ?? 'dev,qa,prod';
-    return raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    return raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
   }
 
   // ==============================
@@ -123,7 +127,12 @@ class BrandingCommand extends BaseCommand {
   // ==============================
   // FLAVORIZR (MERGE SAFE)
   // ==============================
-  Future<void> _setupFlavorizr(File file, String content, String appName, String appId) async {
+  Future<void> _setupFlavorizr(
+    File file,
+    String content,
+    String appName,
+    String appId,
+  ) async {
     final editor = YamlEditor(content);
     final doc = loadYaml(content);
     final existing = doc['flavorizr'] ?? {};
@@ -143,7 +152,10 @@ class BrandingCommand extends BaseCommand {
       return;
     }
 
-    editor.update(['flavorizr'], {...existing, 'ide': 'vscode', 'flavors': flavors});
+    editor.update(
+      ['flavorizr'],
+      {...existing, 'ide': 'vscode', 'flavors': flavors},
+    );
     await file.writeAsString(editor.toString());
     logSuccess('Flavorizr config updated');
   }
@@ -194,8 +206,9 @@ class BrandingCommand extends BaseCommand {
     // 4. Create lib/pages/my_home_page.dart
     final pagesDir = Directory('lib/pages');
     if (!pagesDir.existsSync()) await pagesDir.create(recursive: true);
-    
-    final homeTemplate = await templateService.readTemplate('my_home_page.dart');
+
+    final homeTemplate =
+        await templateService.readTemplate('my_home_page.dart');
     await _writeIfChanged('lib/pages/my_home_page.dart', homeTemplate);
   }
 
@@ -206,7 +219,7 @@ class BrandingCommand extends BaseCommand {
     final targets = isPlatform ? environments : [''];
     for (final env in targets) {
       final suffix = env.isEmpty ? '' : '-$env';
-      
+
       final splashTemplate = await templateService.readTemplate('splash.yaml');
       final splashContent = templateService.replace(splashTemplate, {
         'LOGO_PATH': logoPath,
@@ -269,7 +282,8 @@ class BrandingCommand extends BaseCommand {
 
       // icon
       final iconArgs = ['run', 'flutter_launcher_icons'];
-      if (env.isNotEmpty) iconArgs.addAll(['-f', 'flutter_launcher_icons$suffix.yaml']);
+      if (env.isNotEmpty)
+        iconArgs.addAll(['-f', 'flutter_launcher_icons$suffix.yaml']);
       await _runCommand('dart', iconArgs);
     }
   }
