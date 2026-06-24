@@ -3,10 +3,12 @@
 const String prepareEnvironmentDartTemplate = r"""
 import 'dart:async';
 
+{{#is_monorepo}}
 import 'package:app_bootstrap/app_bootstrap.dart';
 import 'package:app_core/app_core.dart';
 import 'package:app_orchestrator/app_orchestrator.dart';
-import 'package:finvoras/core/configs/di.dart';
+{{/is_monorepo}}
+import 'package:{{app_name}}/core/configs/di.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

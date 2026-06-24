@@ -1,6 +1,6 @@
 name: finvoras_gen
 description: Finvoras internal Flutter code generator and project bootstrapper.
-version: 4.0.1
+version: 4.2.4
 publish_to: none
 
 environment:
@@ -29,6 +29,7 @@ dependencies:
   image_size_getter: ^2.4.0
   build: ^4.0.0
   crypto: ^3.0.0
+  mustache_template: ^2.0.5
 
 dev_dependencies:
   flutter_lints: ^6.0.0

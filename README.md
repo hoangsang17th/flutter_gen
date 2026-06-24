@@ -47,6 +47,7 @@ finvoras_gen init vn.com.finvoras.myapp
 7. Tạo thư mục `assets/images/` và `assets/locales/`.
 8. Cập nhật `ios/Podfile` lên platform `15.0`.
 9. Chạy `flutter pub get`.
+10. Tự động chạy `pod install --repo-update` trong thư mục `ios` để cập nhật CocoaPods.
 
 > **Lưu ý:** Nếu thư mục `packages/` đã tồn tại, lệnh sẽ hỏi xác nhận trước khi tiếp tục.
 
@@ -69,6 +70,9 @@ finvoras_gen branding --type platform --envs dev,stg,prod
 # Chỉ định đường dẫn logo
 finvoras_gen branding --logo assets/images/my_logo.png
 
+# Tùy chỉnh tên hiển thị của ứng dụng (nếu không, sẽ tự động format từ pubspec.yaml)
+finvoras_gen branding --name "Siêu Ứng Dụng"
+
 # CI mode: bỏ qua tất cả confirmation prompts
 finvoras_gen branding --yes
 ```
@@ -80,6 +84,7 @@ finvoras_gen branding --yes
 | `--type` | `-t` | `behavior` | `behavior` (chung 1 App ID) hoặc `platform` (mỗi flavor 1 App ID) |
 | `--envs` | `-e` | `dev,qa,prod` | Danh sách môi trường, phân cách bằng dấu phẩy |
 | `--logo` | | `assets/images/logo.png` | Đường dẫn đến file ảnh logo |
+| `--name` | `-n` | `Auto-format` | Tên hiển thị của ứng dụng trên iOS/Android |
 | `--yes` | `-y` | `false` | Bỏ qua confirmation (dùng cho CI) |
 | `--dry-run` | | `false` | Xem trước thay đổi mà không ghi file |
 
@@ -95,41 +100,36 @@ finvoras_gen branding --yes
 
 ---
 
-### `prepare` — Profile-based project bootstrap
+### `prepare` — Monorepo project bootstrap
 
-`prepare` hỗ trợ 2 profile:
-
-- `generic`: giữ hành vi scaffold cũ (stack bloc/getx).
-- `finvoras_mobile`: one-shot bootstrap cho monorepo kiểu `finvoras/mobile`.
+Lệnh `prepare` đóng vai trò là "one-shot bootstrap" để thiết lập ứng dụng monorepo một cách hoàn chỉnh. 
 
 ```sh
-# Backward-compatible (generic profile)
-finvoras_gen prepare
-finvoras_gen prepare --stack getx
+# Chạy chuẩn bị cho toàn bộ workspace với FVM
+finvoras_gen prepare --runtime fvm --workspace all --yes
 
-# Monorepo profile (runtime bắt buộc)
-finvoras_gen prepare --profile finvoras_mobile --runtime fvm --workspace all --yes
+# Chỉ định runtime flutter mặc định
+finvoras_gen prepare --runtime flutter
 ```
 
 **Options:**
 
 | Flag | Viết tắt | Mặc định | Mô tả |
 |---|---|---|---|
-| `--profile` | | `generic` | `generic` hoặc `finvoras_mobile` |
-| `--stack` | `-s` | `bloc` | Chỉ áp dụng cho `generic` |
-| `--runtime` | | | Bắt buộc với `finvoras_mobile`: `flutter` hoặc `fvm` |
-| `--workspace` | | `all` | `all`, `root`, hoặc danh sách: `packages/a,packages/b` |
+| `--runtime` | `-r` | | Bắt buộc: `flutter` hoặc `fvm` |
+| `--workspace` | `-w` | `all` | `all`, `root`, hoặc danh sách: `packages/a,packages/b` |
 | `--yes` | `-y` | `false` | Chạy non-interactive |
 
-**Pipeline của `finvoras_mobile`:**
+**Pipeline của `prepare`:**
 
-1. Rewrite file critical theo profile (`lib/main.dart`, `lib/core/configs/di.dart`, `lib/core/configs/prepare_environment.dart`).
-2. Chuẩn hoá cấu hình monorepo trong `pubspec.yaml` (`workspace`, local package paths, `finvoras_gen`, `melos.scripts`).
-3. Root dependency sync (`pub get`).
-4. Package dependency sync cho workspace đã chọn.
-5. Codegen package (`build_runner`, `finvoras_gen assets` nếu package có cấu hình).
-6. Codegen root.
-7. Verify + in summary `done/failed/skipped` theo từng step.
+1. Đọc cấu hình từ `ProjectSpec` (nhận dạng monorepo, app name,...).
+2. Sử dụng Mustache template engine để render các file critical: `lib/main.dart`, `lib/app.dart` (bọc `AppOrchestrator`), `lib/core/configs/di.dart`, `lib/core/configs/prepare_environment.dart`.
+3. Chuẩn hoá cấu hình monorepo trong `pubspec.yaml` (`workspace`, local package paths, `finvoras_gen`, `melos.scripts`).
+4. Root dependency sync (`pub get`).
+5. Package dependency sync cho workspace đã chọn.
+6. Codegen package (`build_runner`, `finvoras_gen assets` nếu package có cấu hình).
+7. Codegen root.
+8. Verify + in summary `done/failed/skipped` theo từng step.
 
 ---
 

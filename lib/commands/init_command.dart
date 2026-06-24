@@ -67,6 +67,17 @@ class InitCommand extends BaseCommand {
     // 7. Finalize
     await flutterService.pubGet();
 
+    // 8. CocoaPods (iOS)
+    if (Platform.isMacOS && Directory('ios').existsSync()) {
+      print('📦 Updating iOS CocoaPods (this might take a while)...');
+      await runCommand(
+        'pod',
+        ['install', '--repo-update'],
+        workingDirectory: 'ios',
+        throwOnError: false, // Don't crash if pod fails
+      );
+    }
+
     print('\n✅ Project initialized successfully!');
   }
 

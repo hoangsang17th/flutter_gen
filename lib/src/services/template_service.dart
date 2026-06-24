@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 import 'package:path/path.dart' as p;
+import 'package:mustache_template/mustache_template.dart';
 
 class TemplateService {
   /// Reads a template from lib/src/templates/[name].txt
@@ -45,11 +46,8 @@ class TemplateService {
         'Please ensure the template exists in the package lib/src/templates/ directory.');
   }
 
-  String replace(String template, Map<String, String> values) {
-    var result = template;
-    values.forEach((key, value) {
-      result = result.replaceAll('{{$key}}', value);
-    });
-    return result;
+  String replace(String template, Map<String, dynamic> values) {
+    final t = Template(template, htmlEscapeValues: false, lenient: true);
+    return t.renderString(values);
   }
 }

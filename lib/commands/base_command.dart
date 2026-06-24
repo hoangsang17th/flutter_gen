@@ -18,10 +18,15 @@ abstract class BaseCommand extends Command {
     String command,
     List<String> arguments, {
     bool throwOnError = true,
+    String? workingDirectory,
   }) async {
     logInfo('Executing: $command ${arguments.join(' ')}');
     try {
-      final result = await Process.run(command, arguments);
+      final result = await Process.run(
+        command, 
+        arguments,
+        workingDirectory: workingDirectory,
+      );
       final output = result.stdout.toString().trim();
       final error = result.stderr.toString().trim();
 

@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:finvoras_gen/src/models/project_spec.dart';
 import 'package:finvoras_gen/src/services/flutter_service.dart';
 import 'package:finvoras_gen/src/templates/prepare/di_dart_template.dart';
 import 'package:finvoras_gen/src/templates/prepare/main_dart_template.dart';
 import 'package:finvoras_gen/src/templates/prepare/prepare_environment_dart_template.dart';
+import 'package:finvoras_gen/src/templates/prepare/app_dart_template.dart';
 
 import 'base_command.dart';
 
@@ -121,12 +123,24 @@ class PrepareCommand extends BaseCommand {
   // ---------------------------------------------------------------------------
 
   Future<void> _scaffoldCoreFiles() async {
+    final spec = await ProjectSpec.fromPubspec();
+    final data = spec.toMap();
+
     await projectService.createDirectories(['lib/core/configs/bootstrap']);
-    await File('lib/main.dart').writeAsString(mainDartTemplate);
-    await File('lib/core/configs/di.dart').writeAsString(diDartTemplate);
-    await File('lib/core/configs/prepare_environment.dart')
-        .writeAsString(prepareEnvironmentDartTemplate);
-    logInfo('Scaffolded: main.dart, di.dart, prepare_environment.dart');
+
+    final mainContent = templateService.replace(mainDartTemplate, data);
+    await File('lib/main.dart').writeAsString(mainContent);
+
+    final diContent = templateService.replace(diDartTemplate, data);
+    await File('lib/core/configs/di.dart').writeAsString(diContent);
+
+    final prepareContent = templateService.replace(prepareEnvironmentDartTemplate, data);
+    await File('lib/core/configs/prepare_environment.dart').writeAsString(prepareContent);
+
+    final appContent = templateService.replace(appDartTemplate, data);
+    await File('lib/app.dart').writeAsString(appContent);
+
+    logInfo('Scaffolded: main.dart, app.dart, di.dart, prepare_environment.dart');
   }
 
   Future<void> _normalizePubspecForMonorepo() async {
@@ -162,18 +176,22 @@ class PrepareCommand extends BaseCommand {
         },
       });
 
-      editor.update(['melos', 'scripts', 'get'], {
-        'run': 'melos exec -- "rm -f pubspec.lock && flutter pub get"',
-        'description': 'Delete lock file and get all dependencies',
-      });
-      editor.update(['melos', 'scripts', 'analyze'], {
-        'run': 'melos exec -- "flutter analyze"',
-        'description': 'Run `flutter analyze` in all packages',
-      });
-      editor.update(['melos', 'scripts', 'build_assets'], {
-        'run':
-            'melos exec --concurrency=1 --dir-exists=assets -- "flutter pub get && if grep -q \\"build_runner\\" pubspec.yaml; then flutter pub run build_runner build --delete-conflicting-outputs; else echo \'Skipping build_runner\'; fi && finvoras_gen -c pubspec.yaml"',
-        'description': 'Generate assets code',
+      editor.update(['melos'], {
+        'scripts': {
+          'get': {
+            'run': 'melos exec -- "rm -f pubspec.lock && flutter pub get"',
+            'description': 'Delete lock file and get all dependencies',
+          },
+          'analyze': {
+            'run': 'melos exec -- "flutter analyze"',
+            'description': 'Run `flutter analyze` in all packages',
+          },
+          'build_assets': {
+            'run':
+                'melos exec --concurrency=1 --dir-exists=assets -- "flutter pub get && if grep -q \\"build_runner\\" pubspec.yaml; then flutter pub run build_runner build --delete-conflicting-outputs; else echo \'Skipping build_runner\'; fi && finvoras_gen -c pubspec.yaml"',
+            'description': 'Generate assets code',
+          },
+        }
       });
     });
 

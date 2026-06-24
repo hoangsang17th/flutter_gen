@@ -24,6 +24,11 @@ class BrandingCommand extends BaseCommand {
         defaultsTo: 'assets/images/logo.png',
         help: 'Path to logo image',
       )
+      ..addOption(
+        'name',
+        abbr: 'n',
+        help: 'Formatted App Name for iOS/Android (e.g., "My Super App")',
+      )
       ..addFlag(
         'yes',
         abbr: 'y',
@@ -81,8 +86,12 @@ class BrandingCommand extends BaseCommand {
 
     final content = await pubspecFile.readAsString();
     final doc = loadYaml(content);
-    final appName = doc['name'] as String?;
-    if (appName == null) throw Exception('Missing app name in pubspec.yaml');
+    final rawAppName = doc['name'] as String?;
+    if (rawAppName == null) throw Exception('Missing app name in pubspec.yaml');
+
+    // Resolve formatted app name
+    final argName = argResults?['name'] as String?;
+    final appName = argName ?? _formatAppName(rawAppName);
 
     final appId = (doc['finvoras_gen'] as Map?)?['app_id'] ?? 'com.example.app';
 
@@ -107,6 +116,17 @@ class BrandingCommand extends BaseCommand {
     await _addDependencies();
     await flutterService.pubGet();
     await _generateAssets();
+  }
+
+  // ==============================
+  // UTILS
+  // ==============================
+  String _formatAppName(String name) {
+    return name
+        .split('_')
+        .map((word) => word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1)}')
+        .join(' ')
+        .trim();
   }
 
   // ==============================
