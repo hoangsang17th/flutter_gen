@@ -156,6 +156,7 @@ class InitCommand extends BaseCommand {
       'dev:build_runner',
       'dev:json_serializable',
       'dev:injectable_generator',
+      'dev:melos',
     ]);
 
     // 5.3 Setup Melos

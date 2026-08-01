@@ -52,8 +52,6 @@ workspace:
   - packages/app_core
   - packages/app_bootstrap
 finvoras_gen:
-  app_id: com.test.myapp
-  app_name: My App
   output: lib/generated/
   line_length: 80
   assets:
@@ -66,6 +64,14 @@ finvoras_gen:
     outputs:
       translation_name: AppTranslation
       keys_name: AppLocalesKeys
-  integrations:
-    flutter_svg: true
-    lottie: true
+melos:
+  scripts:
+    get:
+      run: melos exec -- "rm -f pubspec.lock && flutter pub get"
+      description: Delete lock file and get all dependencies
+    analyze:
+      run: melos exec -- "flutter analyze"
+      description: Run `flutter analyze` in all packages
+    build_assets:
+      run: melos exec --concurrency=1 --dir-exists=assets -- "flutter pub get && if grep -q \"build_runner\" pubspec.yaml; then flutter pub run build_runner build --delete-conflicting-outputs; else echo 'Skipping build_runner'; fi && finvoras_gen -c pubspec.yaml"
+      description: Generate assets code
