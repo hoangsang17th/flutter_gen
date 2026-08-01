@@ -2,10 +2,11 @@ import 'dart:io';
 
 import 'package:finvoras_gen/src/models/project_spec.dart';
 import 'package:finvoras_gen/src/services/flutter_service.dart';
+import 'package:finvoras_gen/src/templates/prepare/app_dart_template.dart';
+import 'package:finvoras_gen/src/templates/prepare/app_keys_dart_template.dart';
 import 'package:finvoras_gen/src/templates/prepare/di_dart_template.dart';
 import 'package:finvoras_gen/src/templates/prepare/main_dart_template.dart';
 import 'package:finvoras_gen/src/templates/prepare/prepare_environment_dart_template.dart';
-import 'package:finvoras_gen/src/templates/prepare/app_dart_template.dart';
 
 import 'base_command.dart';
 
@@ -140,7 +141,10 @@ class PrepareCommand extends BaseCommand {
     final appContent = templateService.replace(appDartTemplate, data);
     await File('lib/app.dart').writeAsString(appContent);
 
-    logInfo('Scaffolded: main.dart, app.dart, di.dart, prepare_environment.dart');
+    final appKeysContent = templateService.replace(appKeysDartTemplate, data);
+    await File('lib/core/configs/app_keys.dart').writeAsString(appKeysContent);
+
+    logInfo('Scaffolded: main.dart, app.dart, di.dart, prepare_environment.dart, app_keys.dart');
   }
 
   Future<void> _normalizePubspecForMonorepo() async {

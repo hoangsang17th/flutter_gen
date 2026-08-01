@@ -34,7 +34,16 @@ finvoras_gen init <app-id>
 
 # Ví dụ
 finvoras_gen init vn.com.finvoras.myapp
+
+# Khởi tạo với tên ứng dụng tùy chỉnh (sẽ ghi vào pubspec.yaml cho branding)
+finvoras_gen init vn.com.finvoras.myapp --app-name "My Super App"
 ```
+
+**Options:**
+
+| Flag | Viết tắt | Mặc định | Mô tả |
+|---|---|---|---|
+| `--app-name` | `-n` | `Auto-format` | Tên hiển thị của ứng dụng trên iOS/Android |
 
 **Các bước tự động thực hiện:**
 
@@ -71,7 +80,7 @@ finvoras_gen branding --type platform --envs dev,stg,prod
 finvoras_gen branding --logo assets/images/my_logo.png
 
 # Tùy chỉnh tên hiển thị của ứng dụng (nếu không, sẽ tự động format từ pubspec.yaml)
-finvoras_gen branding --name "Siêu Ứng Dụng"
+finvoras_gen branding --app-name "Siêu Ứng Dụng"
 
 # CI mode: bỏ qua tất cả confirmation prompts
 finvoras_gen branding --yes
@@ -84,7 +93,7 @@ finvoras_gen branding --yes
 | `--type` | `-t` | `behavior` | `behavior` (chung 1 App ID) hoặc `platform` (mỗi flavor 1 App ID) |
 | `--envs` | `-e` | `dev,qa,prod` | Danh sách môi trường, phân cách bằng dấu phẩy |
 | `--logo` | | `assets/images/logo.png` | Đường dẫn đến file ảnh logo |
-| `--name` | `-n` | `Auto-format` | Tên hiển thị của ứng dụng trên iOS/Android |
+| `--app-name` | `-n` | `Auto-format` | Tên hiển thị của ứng dụng trên iOS/Android |
 | `--yes` | `-y` | `false` | Bỏ qua confirmation (dùng cho CI) |
 | `--dry-run` | | `false` | Xem trước thay đổi mà không ghi file |
 

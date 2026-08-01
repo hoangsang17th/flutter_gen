@@ -1,0 +1,71 @@
+name: myapp
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  app_bootstrap:
+    path: packages/app_bootstrap
+  app_core:
+    path: packages/app_core
+  app_getx_integration:
+    path: packages/app_getx_integration
+  app_orchestrator:
+    path: packages/app_orchestrator
+  app_shell_utils:
+    path: packages/app_shell_utils
+  design_tokens:
+    path: packages/design_tokens
+  equatable: ^2.1.0
+  flutter:
+    sdk: flutter
+  get_it: ^9.2.1
+  injectable: ^2.7.1+4
+  shared_assets:
+    path: packages/shared_assets
+  shared_widgets:
+    path: packages/shared_widgets
+  team_rules:
+    path: packages/team_rules
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.15.1
+  json_serializable: ^6.11.2
+  injectable_generator: ^2.9.1
+
+flutter:
+  uses-material-design: true
+workspace:
+  - packages/shared_widgets
+  - packages/design_tokens
+  - packages/shared_assets
+  - packages/app_shell_utils
+  - packages/team_rules
+  - packages/app_getx_integration
+  - packages/app_orchestrator
+  - packages/app_core
+  - packages/app_bootstrap
+finvoras_gen:
+  app_id: com.test.myapp
+  app_name: My App
+  output: lib/generated/
+  line_length: 80
+  assets:
+    enabled: true
+    outputs:
+      class_name: AppAssets
+  locales:
+    enabled: true
+    folder: assets/locales
+    outputs:
+      translation_name: AppTranslation
+      keys_name: AppLocalesKeys
+  integrations:
+    flutter_svg: true
+    lottie: true

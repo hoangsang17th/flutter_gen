@@ -1,10 +1,10 @@
 const String diDartTemplate = r"""
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
-import 'package:finvoras/core/configs/di.config.dart';
+import 'package:{{app_name}}/core/configs/di.config.dart';
 
 final getIt = GetIt.instance;
 
 @InjectableInit(initializerName: r'$initGetIt')
-Future<void> configureDependencies() => $initGetIt(getIt);
+Future<void> configureDependencies() async => getIt.$initGetIt();
 """;

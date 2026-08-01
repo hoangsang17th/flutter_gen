@@ -1,8 +1,5 @@
 const String appDartTemplate = r"""
-import 'package:{{app_name}}/core/config/app_pages.dart';
-import 'package:{{app_name}}/core/config/app_route_observer.dart';
 import 'package:{{app_name}}/generated/locales.gen.dart';
-import 'package:{{app_name}}/modules/app/presentation/bindings/app_binding.dart';
 import 'package:flutter/material.dart';
 
 {{#is_monorepo}}
@@ -39,18 +36,21 @@ class _AppState extends State<App> {
         final controller = orchestrator.controller;
 
         return GetMaterialApp(
-          title: AppLocalesKeys.app_name.l,
+          // TODO: Use AppLocalesKeys.app_name.l when localization is ready
+          title: '{{app_name}}',
           theme: AppThemed.themeData,
           themeMode: controller.themeMode,
           debugShowCheckedModeBanner: false,
           builder: EasyLoading.init(),
-          initialBinding: AppControllerBinding(),
-          getPages: AppPages.pages,
-          initialRoute: AppRoutes.dashboard,
+          // TODO: Configure your bindings, pages, and routes here
+          // initialBinding: AppControllerBinding(),
+          // getPages: AppPages.pages,
+          // initialRoute: AppRoutes.dashboard,
           navigatorKey: orchestrator.navigatorKey,
           navigatorObservers: [
             AppFirebaseAnalyticsService.instance.observer,
-            appRouteObserver,
+            // TODO: Add app route observer
+            // appRouteObserver,
           ],
           scaffoldMessengerKey: orchestrator.scaffoldMessengerKey,
           locale: controller.locale ?? controller.fallbackLocale,
@@ -70,9 +70,10 @@ class _AppState extends State<App> {
       title: '{{app_name}}',
       debugShowCheckedModeBanner: false,
       builder: EasyLoading.init(),
-      initialBinding: AppControllerBinding(),
-      getPages: AppPages.pages,
-      initialRoute: AppRoutes.dashboard,
+      // TODO: Configure your bindings, pages, and routes here
+      // initialBinding: AppControllerBinding(),
+      // getPages: AppPages.pages,
+      // initialRoute: AppRoutes.dashboard,
       localizationsDelegates: const [
         GlobalWidgetsLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

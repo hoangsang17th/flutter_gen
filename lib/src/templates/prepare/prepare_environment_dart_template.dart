@@ -7,22 +7,23 @@ import 'dart:async';
 import 'package:app_bootstrap/app_bootstrap.dart';
 import 'package:app_core/app_core.dart';
 import 'package:app_orchestrator/app_orchestrator.dart';
+import 'package:app_shell_utils/app_shell_utils.dart';
 {{/is_monorepo}}
 import 'package:{{app_name}}/core/configs/di.dart';
+import 'package:{{app_name}}/core/configs/app_keys.dart';
+import 'package:{{app_name}}/generated/locales.gen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 
-// ---------------------------------------------------------------------------
-// Critical — phải hoàn tất trước runApp()
-// ---------------------------------------------------------------------------
 Future<void> prepareCriticalEnvironment() async {
   WidgetsBinding? widgetsBinding;
 
   final pipeline = BootstrapPipeline(
     steps: [
-      // Phase 1: Foundation
+      // Phase 1: Ensure Flutter binding & Native splash
       BootstrapStep(
         name: 'Ensure Flutter binding',
         shouldRun: () => widgetsBinding == null,
@@ -31,160 +32,230 @@ Future<void> prepareCriticalEnvironment() async {
         },
       ),
       BootstrapStep(
-        name: 'Configure system UI',
+        name: 'Register debug frame timings',
+        run: () async => _registerDebugFrameTimings(),
+      ),
+      BootstrapStep(
+        name: 'Preserve native splash',
         run: () async {
-          final binding = widgetsBinding;
-          if (binding != null) {
-            FlutterNativeSplash.preserve(widgetsBinding: binding);
-          }
-          await SystemChrome.setEnabledSystemUIMode(
-            SystemUiMode.manual,
-            overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top],
-          );
+          // TODO: Add your native splash preservation logic here
         },
       ),
 
-      // Phase 2: Storage
+      // Phase 2: Foundation & Storage
+      BootstrapStep(
+        name: 'Prepare foundation',
+        run: _prepareFoundation,
+      ),
       BootstrapStep(
         name: 'Initialize storage',
-        run: () async {
-          await AppPathService.instance.init();
-          await AppKeyStorage.instance.init(
-            pinStorageToken: AppSecrets.keyStoragePinToken,
-          );
-        },
+        run: _prepareStorage,
       ),
 
-      // Phase 3: Dependency registration
+      // Phase 3: Dependencies & Core Services
       BootstrapStep(
         name: 'Register dependencies',
-        run: () async {
-          await registerAppOrchestratorDependencies(
-            getIt,
-            storage: AppKeyStorage.instance,
-            translations: AppTranslation.translations,
-          );
-          // TODO: AppNavigationBinding.registerDelegate(GetXNavigationDelegate());
-          // TODO: registerAppNavigatorRoutes();
-        },
+        run: _registerDependencies,
+      ),
+      BootstrapStep(
+        name: 'Prepare core services',
+        run: _prepareCoreServices,
       ),
 
-      // Phase 4: Core services (parallel)
-      ParallelBootstrapStep(
-        name: 'Initialize core services',
-        steps: [
-          BootstrapStep(
-            name: 'HTTP client',
-            run: () async {
-              // TODO: await AppHttpConnect.instance.init(...)
-            },
-          ),
-          BootstrapStep(
-            name: 'Firebase',
-            run: () async {
-              await Firebase.initializeApp(
-                options: AppFlavorConfig.firebaseOptions,
-              );
-            },
-          ),
-          BootstrapStep(
-            name: 'Network checker',
-            run: () async {
-              // TODO: await AppNetworkChecker.instance.init(...)
-            },
-          ),
-        ],
-      ),
-
-      // Phase 5: HTTP i18n resolver
+      // Phase 4: Utilities & Platform
       BootstrapStep(
         name: 'Register HTTP localizations',
-        run: () async {
-          AppHttpLocalizations.register((key, {params = const {}}) {
-            final controller = AppOrchestraController.instance;
-            final locale = controller.locale ?? controller.fallbackLocale;
-            final template =
-                controller.translations[locale.toString()]?[key] ??
-                controller.translations[locale.languageCode]?[key];
-            if (template == null || template.isEmpty) return null;
-            var formatted = template;
-            params.forEach((k, v) => formatted = formatted.replaceAll('@$k', v));
-            return formatted;
-          });
-        },
+        run: () async => _registerHttpLocalizationResolver(),
       ),
-
-      // Phase 6: Platform setup
       BootstrapStep(
         name: 'Configure platform',
-        run: () async {
-          if (isMobile) {
-            await SystemChrome.setPreferredOrientations([
-              DeviceOrientation.portraitUp,
-              DeviceOrientation.portraitDown,
-            ]);
-            // TODO: await FlutterDisplayMode.setHighRefreshRate();
-          }
-        },
+        run: _preparePlatformEnvironment,
       ),
     ],
   );
 
-  await pipeline.run();
+  try {
+    await pipeline.run();
+  } catch (exception, stackTrace) {
+    {{#is_monorepo}}
+    await AppSentryService.instance.reportError(exception, stackTrace);
+    {{/is_monorepo}}
+    rethrow;
+  }
 }
 
-// ---------------------------------------------------------------------------
-// Deferred — chạy sau runApp(), không block startup
-// ---------------------------------------------------------------------------
 Future<void> prepareDeferredEnvironment() async {
   final pipeline = BootstrapPipeline(
     steps: [
-      // Phase 7a: Shared runtime services (parallel)
+      BootstrapStep(
+        name: 'Wait for first frame',
+        run: _waitForFirstFrame,
+      ),
+      {{#is_monorepo}}
+      BootstrapStep(
+        name: 'Initialize app actions & event bus',
+        run: () async {
+          AppActions.instance.init();
+          AppEventBusService.instance.init();
+        },
+      ),
+      // Phase 7: Shared runtime services (parallel)
       ParallelBootstrapStep(
         name: 'Initialize shared runtime services',
         steps: [
+          BootstrapStep(
+            name: 'App links',
+            run: _initializeAppLinks,
+          ),
           BootstrapStep(
             name: 'Crashlytics',
             run: AppAnalytics.instance.ensureCrashlyticsInitialized,
           ),
           BootstrapStep(
-            name: 'Event bus',
-            run: () async {
-              // TODO: await AppEventBusService.instance.init();
-            },
-          ),
-          BootstrapStep(
-            name: 'App links',
-            run: () async {
-              // TODO: await AppLinksService.instance.init(...)
-              // TODO: AppLinksService.instance.registerKnownRoutes(...)
-            },
+            name: 'Firebase Analytics',
+            run: AppAnalytics.instance.ensureFirebaseAnalyticsInitialized,
           ),
           BootstrapStep(
             name: 'Remote config',
             run: () async {
-              // TODO: AppRemoteConfig.instance.init(...)
+              await AppRemoteConfig.instance.init(
+                minimumFetchInterval: const Duration(hours: 4),
+                extendedDefaults: {},
+              );
             },
           ),
         ],
       ),
-
-      // Phase 7b: Post-frame tasks
       BootstrapStep(
-        name: 'Schedule post-frame tasks',
+        name: 'Initialize lifecycle',
         run: () async {
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            await Future.wait([
-              AppVersionService.instance.init(),
-              AppBillingService.instance.init(),
-              AppInAppReviewService.instance.init(),
-            ]);
-          });
+          AppLifecycle.instance.init();
+          // AppLifecycle.instance.onSuspending(() async {});
+          // AppLifecycle.instance.onResumed(() async {});
         },
       ),
+      {{/is_monorepo}}
     ],
   );
 
-  await pipeline.run();
+  try {
+    await pipeline.run();
+  } catch (e) {
+    {{#is_monorepo}}
+    AppLogger.error(
+      'Deferred environment initialization error',
+      AppLoggingType.OTHER,
+      e,
+    );
+    {{/is_monorepo}}
+  }
+}
+
+void _registerDebugFrameTimings() {
+  if (!kDebugMode) {
+    return;
+  }
+  SchedulerBinding.instance.addTimingsCallback((timings) {
+    for (final timing in timings) {
+      final buildMs = timing.buildDuration.inMilliseconds;
+      final rasterMs = timing.rasterDuration.inMilliseconds;
+      if (buildMs > 16 || rasterMs > 16) {
+        {{#is_monorepo}}
+        AppLogger.warning(
+          'Jank frame: build=${buildMs}ms raster=${rasterMs}ms',
+          AppLoggingType.OTHER,
+        );
+        {{/is_monorepo}}
+      }
+    }
+  });
+}
+
+Future<void> _prepareFoundation() {
+  return SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top],
+  );
+}
+
+Future<void> _prepareStorage() async {
+  {{#is_monorepo}}
+  await AppPathService.instance.init();
+  await AppKeyStorage.instance.init(
+    keyObjects: [
+      KeyObject(key: AppKey.userName),
+      KeyObject(key: AppKey.deviceId),
+      // TODO: Add more keys here
+    ],
+  );
+  {{/is_monorepo}}
+}
+
+Future<void> _registerDependencies() async {
+  {{#is_monorepo}}
+  await registerAppOrchestratorDependencies(
+    getIt,
+    storage: AppKeyStorage.instance,
+    translations: AppTranslation.translations,
+  );
+  {{/is_monorepo}}
+  await configureDependencies();
+
+  {{#is_monorepo}}
+  registerAppNavigatorDelegate();
+  // TODO: AppLinksService.instance.registerKnownRoutes(AppRoutes.all);
+  {{/is_monorepo}}
+}
+
+Future<void> _prepareCoreServices() {
+  return Firebase.initializeApp(
+    options: null, // TODO: Replace with DefaultFirebaseOptions.currentPlatform
+  );
+}
+
+void _registerHttpLocalizationResolver() {
+  {{#is_monorepo}}
+  AppHttpLocalizations.register((key, {params = const {}}) {
+    final controller = AppOrchestraController.instance;
+    final locale = controller.locale ?? controller.fallbackLocale;
+    final translations = controller.translations;
+
+    final template =
+        translations[locale.toString()]?[key] ??
+        translations[locale.languageCode]?[key];
+    if (template == null || template.isEmpty) {
+      return null;
+    }
+
+    var formatted = template;
+    params.forEach((paramKey, paramValue) {
+      formatted = formatted.replaceAll('@$paramKey', paramValue);
+    });
+    return formatted;
+  });
+  {{/is_monorepo}}
+}
+
+Future<void> _preparePlatformEnvironment() {
+  return SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+}
+
+Future<void> _initializeAppLinks() async {
+  {{#is_monorepo}}
+  // TODO: Implement AppLinksService initialization
+  {{/is_monorepo}}
+}
+
+Future<void> _waitForFirstFrame() {
+  final completer = Completer<void>();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!completer.isCompleted) {
+      completer.complete();
+    }
+  });
+  return completer.future;
 }
 """;

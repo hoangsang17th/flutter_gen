@@ -25,7 +25,7 @@ class BrandingCommand extends BaseCommand {
         help: 'Path to logo image',
       )
       ..addOption(
-        'name',
+        'app-name',
         abbr: 'n',
         help: 'Formatted App Name for iOS/Android (e.g., "My Super App")',
       )
@@ -90,10 +90,12 @@ class BrandingCommand extends BaseCommand {
     if (rawAppName == null) throw Exception('Missing app name in pubspec.yaml');
 
     // Resolve formatted app name
-    final argName = argResults?['name'] as String?;
-    final appName = argName ?? _formatAppName(rawAppName);
+    final argName = argResults?['app-name'] as String?;
+    final finvorasGen = doc['finvoras_gen'] as Map?;
+    final configAppName = finvorasGen?['app_name'] as String?;
+    final appName = argName ?? configAppName ?? _formatAppName(rawAppName);
 
-    final appId = (doc['finvoras_gen'] as Map?)?['app_id'] ?? 'com.example.app';
+    final appId = finvorasGen?['app_id'] ?? 'com.example.app';
 
     logInfo('App: $appName');
     logInfo('Type: ${argResults!['type']}');

@@ -3,12 +3,23 @@ import 'dart:io';
 import 'base_command.dart';
 
 class InitCommand extends BaseCommand {
+  InitCommand() {
+    argParser.addOption(
+      'app-name',
+      abbr: 'n',
+      help: 'Formatted App Name for iOS/Android (e.g., "My Super App")',
+    );
+  }
+
   @override
   final name = 'init';
 
   @override
   final description =
       'Initialize a new Flutter project with core packages and submodules.';
+
+  @override
+  String get invocation => 'finvoras_gen init <application_id> [arguments]';
 
   @override
   Future<void> run() async {
@@ -36,8 +47,12 @@ class InitCommand extends BaseCommand {
       print('❌ Error: Invalid application ID format.');
       return;
     }
-    final appName = parts.last;
+    final rawAppName = parts.last;
     final org = parts.sublist(0, parts.length - 1).join('.');
+    
+    // Resolve app name
+    final argAppName = argResults?['app-name'] as String?;
+    final appName = argAppName ?? _formatAppName(rawAppName);
 
     // 2. Pre-flight checks
     if (Directory('packages').existsSync()) {
@@ -48,7 +63,7 @@ class InitCommand extends BaseCommand {
     print('🚀 Initializing project $appName ($appId)...');
 
     // 3. Create Flutter App
-    await flutterService.create(appName, org);
+    await flutterService.create(rawAppName, org);
 
     // 4. Setup Git Submodules
     if (!Directory('packages').existsSync()) {
@@ -68,7 +83,7 @@ class InitCommand extends BaseCommand {
     await flutterService.pubGet();
 
     // 8. CocoaPods (iOS)
-    if (Platform.isMacOS && Directory('ios').existsSync()) {
+    if (Platform.isMacOS && Directory('ios').existsSync() && File('ios/Podfile').existsSync()) {
       print('📦 Updating iOS CocoaPods (this might take a while)...');
       await runCommand(
         'pod',
@@ -111,6 +126,7 @@ class InitCommand extends BaseCommand {
         'finvoras_gen',
       ], {
         'app_id': appId,
+        'app_name': appName,
         'output': 'lib/generated/',
         'line_length': 80,
         'assets': {
@@ -147,5 +163,13 @@ class InitCommand extends BaseCommand {
 
     // 5.4 Create assets folders
     await projectService.createDirectories(['assets/images', 'assets/locales']);
+  }
+
+  String _formatAppName(String name) {
+    return name
+        .split('_')
+        .map((word) => word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1)}')
+        .join(' ')
+        .trim();
   }
 }
