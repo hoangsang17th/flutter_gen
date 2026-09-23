@@ -67,10 +67,34 @@ class InitCommand extends BaseCommand {
 
     // 4. Setup Git Submodules
     if (!Directory('packages').existsSync()) {
-      await gitService.clone(
-        'https://github.com/hoangsang17th/packages',
-        'packages',
-      );
+      try {
+        await gitService.clone(
+          'https://github.com/hoangsang17th/packages',
+          'packages',
+        );
+      } catch (e) {
+        print('⚠️ Could not clone packages from remote git repository: $e');
+        final localCandidates = [
+          '../packages',
+          '../../packages',
+          '../../../packages',
+          '/Volumes/TurboBox/Projects/idea-vault/apps/keynd/packages',
+        ];
+        bool copied = false;
+        for (final candidate in localCandidates) {
+          final dir = Directory(candidate);
+          if (dir.existsSync() &&
+              File('${dir.path}/app_core/pubspec.yaml').existsSync()) {
+            print('📦 Copying local packages from $candidate...');
+            await _copyDirectory(dir, Directory('packages'));
+            copied = true;
+            break;
+          }
+        }
+        if (!copied) {
+          rethrow;
+        }
+      }
     }
 
     // 5. Configure Project (YAML & Melos)
@@ -115,6 +139,11 @@ class InitCommand extends BaseCommand {
         editor.update(['dependencies', pkg], {'path': 'packages/$pkg'});
       }
 
+      editor.update(['dependencies', 'flutter_localizations'], {'sdk': 'flutter'});
+      editor.update(['dependencies', 'flutter_easyloading'], '^4.0.2');
+      editor.update(['dependencies', 'get'], '^4.6.6');
+      editor.update(['dependencies', 'firebase_core'], '^4.13.0');
+
       // Add workspace only if submodule packages exist
       if (localPackages.isNotEmpty) {
         final workspaceList = localPackages.map((p) => 'packages/$p').toList();
@@ -146,6 +175,24 @@ class InitCommand extends BaseCommand {
           'lottie': true,
         },
       });
+
+      editor.update(['melos'], {
+        'scripts': {
+          'get': {
+            'run': 'melos exec -- "rm -f pubspec.lock && flutter pub get"',
+            'description': 'Delete lock file and get all dependencies',
+          },
+          'analyze': {
+            'run': 'melos exec -- "flutter analyze"',
+            'description': 'Run `flutter analyze` in all packages',
+          },
+          'build_assets': {
+            'run':
+                'melos exec --concurrency=1 --dir-exists=assets -- "flutter pub get && if grep -q \\"build_runner\\" pubspec.yaml; then dart run build_runner build --delete-conflicting-outputs; else echo \'Skipping build_runner\'; fi && finvoras_gen assets -c pubspec.yaml"',
+            'description': 'Generate assets code',
+          },
+        }
+      });
     });
 
     // 5.2 Add standard packages via CLI
@@ -164,6 +211,20 @@ class InitCommand extends BaseCommand {
 
     // 5.4 Create assets folders
     await projectService.createDirectories(['assets/images', 'assets/locales']);
+  }
+
+  Future<void> _copyDirectory(Directory source, Directory destination) async {
+    await destination.create(recursive: true);
+    await for (final entity in source.list(recursive: false)) {
+      final name = entity.path.split(Platform.pathSeparator).last;
+      if (name == '.git' || name == '.dart_tool' || name == 'build') continue;
+      final destPath = '${destination.path}/$name';
+      if (entity is Directory) {
+        await _copyDirectory(entity, Directory(destPath));
+      } else if (entity is File) {
+        await entity.copy(destPath);
+      }
+    }
   }
 
   String _formatAppName(String name) {

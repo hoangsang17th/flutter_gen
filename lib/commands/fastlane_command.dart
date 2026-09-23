@@ -201,9 +201,9 @@ platform :android do
     build_cmd = "cd ../.. && flutter build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols"
     if use_flavor
       build_cmd += " --flavor #{flavor}"
-      aab_path = "../build/app/outputs/bundle/#{flavor}Release/app-#{flavor}-release.aab"
+      aab_path = "../../build/app/outputs/bundle/#{flavor}Release/app-#{flavor}-release.aab"
     else
-      aab_path = "../build/app/outputs/bundle/release/app-release.aab"
+      aab_path = "../../build/app/outputs/bundle/release/app-release.aab"
     end
     
     sh(build_cmd)
@@ -232,9 +232,9 @@ platform :android do
     build_cmd = "cd ../.. && flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols"
     if use_flavor
       build_cmd += " --flavor #{flavor}"
-      apk_path = "../build/app/outputs/flutter-apk/app-#{flavor}-release.apk"
+      apk_path = "../../build/app/outputs/flutter-apk/app-#{flavor}-release.apk"
     else
-      apk_path = "../build/app/outputs/flutter-apk/app-release.apk"
+      apk_path = "../../build/app/outputs/flutter-apk/app-release.apk"
     end
 
     sh(build_cmd)
@@ -329,7 +329,7 @@ platform :ios do
     sh(build_cmd)
     
     upload_to_testflight(
-      ipa: "../build/ios/ipa/Runner.ipa",
+      ipa: "../../build/ios/ipa/Runner.ipa",
       skip_waiting_for_build_processing: true
     )
     

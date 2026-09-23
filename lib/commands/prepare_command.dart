@@ -163,6 +163,11 @@ class PrepareCommand extends BaseCommand {
         editor.update(['dependencies', pkg], {'path': 'packages/$pkg'});
       }
 
+      editor.update(['dependencies', 'flutter_localizations'], {'sdk': 'flutter'});
+      editor.update(['dependencies', 'flutter_easyloading'], '^4.0.2');
+      editor.update(['dependencies', 'get'], '^4.6.6');
+      editor.update(['dependencies', 'firebase_core'], '^4.13.0');
+
       editor.update(['finvoras_gen'], {
         'output': 'lib/generated/',
         'line_length': 80,
@@ -192,14 +197,17 @@ class PrepareCommand extends BaseCommand {
           },
           'build_assets': {
             'run':
-                'melos exec --concurrency=1 --dir-exists=assets -- "flutter pub get && if grep -q \\"build_runner\\" pubspec.yaml; then flutter pub run build_runner build --delete-conflicting-outputs; else echo \'Skipping build_runner\'; fi && finvoras_gen -c pubspec.yaml"',
+                'melos exec --concurrency=1 --dir-exists=assets -- "flutter pub get && if grep -q \\"build_runner\\" pubspec.yaml; then dart run build_runner build --delete-conflicting-outputs; else echo \'Skipping build_runner\'; fi && finvoras_gen assets -c pubspec.yaml"',
             'description': 'Generate assets code',
           },
         }
       });
     });
 
-    logInfo('Normalized pubspec.yaml for monorepo');
+    final spec = await ProjectSpec.fromPubspec();
+    await projectService.setupMelosConfig(spec.appName, ['packages/**']);
+
+    logInfo('Normalized pubspec.yaml and melos.yaml for monorepo');
   }
 
   // ---------------------------------------------------------------------------

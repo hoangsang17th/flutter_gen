@@ -19,8 +19,19 @@ void main(List<String> args) async {
     ..addCommand(FastlaneCommand())
     ..addCommand(VersionCommand());
 
+  var normalizedArgs = args;
+  if (args.isNotEmpty) {
+    final first = args.first;
+    if (first == '-c' ||
+        first.startsWith('--config') ||
+        first == '-b' ||
+        first.startsWith('--build')) {
+      normalizedArgs = ['assets', ...args];
+    }
+  }
+
   try {
-    await runner.run(args);
+    await runner.run(normalizedArgs);
   } on UsageException catch (e) {
     stderr.writeln(e.message);
     stderr.writeln(runner.usage);

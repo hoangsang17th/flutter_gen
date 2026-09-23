@@ -297,7 +297,7 @@ class BrandingCommand extends BaseCommand {
 
       // splash
       final splashArgs = ['run', 'flutter_native_splash:create'];
-      if (env.isNotEmpty) splashArgs.addAll(['-f', env]);
+      if (env.isNotEmpty) splashArgs.add('--path=flutter_native_splash$suffix.yaml');
       await _runCommand('dart', splashArgs);
 
       if (env.isNotEmpty) await _copyAndroidResources(env);

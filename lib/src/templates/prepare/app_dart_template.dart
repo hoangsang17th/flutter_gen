@@ -1,11 +1,11 @@
 const String appDartTemplate = r"""
-import 'package:{{app_name}}/generated/locales.gen.dart';
 import 'package:flutter/material.dart';
 
 {{#is_monorepo}}
 import 'package:app_core/app_core.dart';
 import 'package:app_orchestrator/app_orchestrator.dart';
 import 'package:app_shell_utils/app_shell_utils.dart';
+import 'package:firebase_core/firebase_core.dart';
 {{/is_monorepo}}
 
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -46,9 +46,15 @@ class _AppState extends State<App> {
           // initialBinding: AppControllerBinding(),
           // getPages: AppPages.pages,
           // initialRoute: AppRoutes.dashboard,
+          home: const Scaffold(
+            body: Center(
+              child: Text('{{app_name}}'),
+            ),
+          ),
           navigatorKey: orchestrator.navigatorKey,
           navigatorObservers: [
-            AppFirebaseAnalyticsService.instance.observer,
+            if (Firebase.apps.isNotEmpty)
+              AppFirebaseAnalyticsService.instance.observer,
             // TODO: Add app route observer
             // appRouteObserver,
           ],
@@ -74,6 +80,11 @@ class _AppState extends State<App> {
       // initialBinding: AppControllerBinding(),
       // getPages: AppPages.pages,
       // initialRoute: AppRoutes.dashboard,
+      home: const Scaffold(
+        body: Center(
+          child: Text('{{app_name}}'),
+        ),
+      ),
       localizationsDelegates: const [
         GlobalWidgetsLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

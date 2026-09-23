@@ -109,15 +109,22 @@ Future<void> prepareDeferredEnvironment() async {
           ),
           BootstrapStep(
             name: 'Crashlytics',
-            run: AppAnalytics.instance.ensureCrashlyticsInitialized,
+            run: () async {
+              if (Firebase.apps.isEmpty) return;
+              await AppAnalytics.instance.ensureCrashlyticsInitialized();
+            },
           ),
           BootstrapStep(
             name: 'Firebase Analytics',
-            run: AppAnalytics.instance.ensureFirebaseAnalyticsInitialized,
+            run: () async {
+              if (Firebase.apps.isEmpty) return;
+              await AppAnalytics.instance.ensureFirebaseAnalyticsInitialized();
+            },
           ),
           BootstrapStep(
             name: 'Remote config',
             run: () async {
+              if (Firebase.apps.isEmpty) return;
               await AppRemoteConfig.instance.init(
                 minimumFetchInterval: const Duration(hours: 4),
                 extendedDefaults: {},
@@ -198,6 +205,7 @@ Future<void> _registerDependencies() async {
     storage: AppKeyStorage.instance,
     translations: AppTranslation.translations,
   );
+  registerAppShellOverlayDelegate();
   {{/is_monorepo}}
   await configureDependencies();
 
@@ -207,10 +215,14 @@ Future<void> _registerDependencies() async {
   {{/is_monorepo}}
 }
 
-Future<void> _prepareCoreServices() {
-  return Firebase.initializeApp(
-    options: null, // TODO: Replace with DefaultFirebaseOptions.currentPlatform
-  );
+Future<void> _prepareCoreServices() async {
+  try {
+    await Firebase.initializeApp(
+      options: null, // TODO: Replace with DefaultFirebaseOptions.currentPlatform
+    );
+  } catch (e) {
+    debugPrint('ℹ️ Firebase.initializeApp bypassed during bootstrap: $e');
+  }
 }
 
 void _registerHttpLocalizationResolver() {

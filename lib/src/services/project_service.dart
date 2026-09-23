@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:yaml_edit/yaml_edit.dart';
 import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 class ProjectService {
   Future<void> updatePubspecYaml(Function(YamlEditor editor) update) async {
@@ -22,6 +22,17 @@ name: $appName
 packages:
   - .
 ${packages.map((p) => '  - $p').join('\n')}
+
+scripts:
+  get:
+    run: melos exec -- "rm -f pubspec.lock && flutter pub get"
+    description: Delete lock file and get all dependencies
+  analyze:
+    run: melos exec -- "flutter analyze"
+    description: Run `flutter analyze` in all packages
+  build_assets:
+    run: melos exec --concurrency=1 --dir-exists=assets -- "flutter pub get && if grep -q \\"build_runner\\" pubspec.yaml; then dart run build_runner build --delete-conflicting-outputs; else echo 'Skipping build_runner'; fi && finvoras_gen assets -c pubspec.yaml"
+    description: Generate assets code
 ''';
     await file.writeAsString(content);
     print('✅ Created melos.yaml');
@@ -32,21 +43,41 @@ ${packages.map((p) => '  - $p').join('\n')}
     if (!file.existsSync()) return;
 
     print('📱 Setting iOS platform to $version in Podfile...');
-    final content = await file.readAsString();
+    var content = await file.readAsString();
     final platformRegex = RegExp(
       r'''^\s*#?\s*platform\s+:ios,\s+['"][^'"]+['"]''',
       multiLine: true,
     );
 
     if (platformRegex.hasMatch(content)) {
-      final newContent =
-          content.replaceFirst(platformRegex, "platform :ios, '$version'");
-      await file.writeAsString(newContent);
+      content = content.replaceFirst(platformRegex, "platform :ios, '$version'");
     } else {
-      final newContent = "platform :ios, '$version'\n$content";
-      await file.writeAsString(newContent);
+      content = "platform :ios, '$version'\n$content";
     }
+
+    if (!content.contains("config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']")) {
+      content = content.replaceAll(
+        'flutter_additional_ios_build_settings(target)',
+        '''flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '$version'
+    end''',
+      );
+    }
+
+    await file.writeAsString(content);
     print('✅ Updated ios/Podfile');
+
+    final pbxproj = File('ios/Runner.xcodeproj/project.pbxproj');
+    if (pbxproj.existsSync()) {
+      var pbxContent = await pbxproj.readAsString();
+      pbxContent = pbxContent.replaceAll(
+        RegExp(r'IPHONEOS_DEPLOYMENT_TARGET\s*=\s*[0-9.]+;'),
+        'IPHONEOS_DEPLOYMENT_TARGET = $version;',
+      );
+      await pbxproj.writeAsString(pbxContent);
+      print('✅ Updated IPHONEOS_DEPLOYMENT_TARGET in Runner.xcodeproj');
+    }
   }
 
   Future<void> fixIosAppIconName() async {

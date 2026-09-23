@@ -95,6 +95,7 @@ class $keysName {
   ${parsedKeys.toString()}
 }
 
+// ignore: unused_element
 class _Locales {
 \t${parsedLocales.toString()}
 }
