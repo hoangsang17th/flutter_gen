@@ -51,10 +51,10 @@ finvoras_gen init vn.com.finvoras.myapp --app-name "My Super App"
 2. Clone submodule nội bộ `packages` từ GitHub.
 3. Link các local packages vào `pubspec.yaml` (workspace + dependencies).
 4. Ghi cấu hình `finvoras_gen` vào `pubspec.yaml` (output, assets, locales...).
-5. Thêm bộ package chuẩn: `injectable`, `get_it`, `equatable`, `build_runner`,...
-6. Tạo `melos.yaml` cho monorepo.
+5. Thêm bộ package chuẩn: `injectable`, `get_it`, `equatable`, `build_runner`, `flutter_localizations`, `flutter_easyloading`, `get`, `firebase_core`,...
+6. Tạo `melos.yaml` và đồng bộ `melos.scripts` (`get`, `analyze`, `build_assets`) vào cả `pubspec.yaml` (hỗ trợ Dart Pub Workspaces).
 7. Tạo thư mục `assets/images/` và `assets/locales/`.
-8. Cập nhật `ios/Podfile` lên platform `15.0`.
+8. Cập nhật `ios/Podfile` lên platform `15.0` cùng post_install hook đồng bộ deployment target cho toàn bộ CocoaPods.
 9. Chạy `flutter pub get`.
 10. Tự động chạy `pod install --repo-update` trong thư mục `ios` để cập nhật CocoaPods.
 
@@ -89,7 +89,7 @@ finvoras_gen branding --yes
 **Options:**
 
 | Flag | Viết tắt | Mặc định | Mô tả |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `--type` | `-t` | `behavior` | `behavior` (chung 1 App ID) hoặc `platform` (mỗi flavor 1 App ID) |
 | `--envs` | `-e` | `dev,qa,prod` | Danh sách môi trường, phân cách bằng dấu phẩy |
 | `--logo` | | `assets/images/logo.png` | Đường dẫn đến file ảnh logo |
@@ -111,7 +111,7 @@ finvoras_gen branding --yes
 
 ### `prepare` — Monorepo project bootstrap
 
-Lệnh `prepare` đóng vai trò là "one-shot bootstrap" để thiết lập ứng dụng monorepo một cách hoàn chỉnh. 
+Lệnh `prepare` đóng vai trò là "one-shot bootstrap" để thiết lập ứng dụng monorepo một cách hoàn chỉnh.
 
 ```sh
 # Chạy chuẩn bị cho toàn bộ workspace với FVM
@@ -124,7 +124,7 @@ finvoras_gen prepare --runtime flutter
 **Options:**
 
 | Flag | Viết tắt | Mặc định | Mô tả |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `--runtime` | `-r` | | Bắt buộc: `flutter` hoặc `fvm` |
 | `--workspace` | `-w` | `all` | `all`, `root`, hoặc danh sách: `packages/a,packages/b` |
 | `--yes` | `-y` | `false` | Chạy non-interactive |
@@ -132,7 +132,7 @@ finvoras_gen prepare --runtime flutter
 **Pipeline của `prepare`:**
 
 1. Đọc cấu hình từ `ProjectSpec` (nhận dạng monorepo, app name,...).
-2. Sử dụng Mustache template engine để render các file critical: `lib/main.dart`, `lib/app.dart` (bọc `AppOrchestrator`), `lib/core/configs/di.dart`, `lib/core/configs/prepare_environment.dart`.
+2. Sử dụng Mustache template engine để render các file critical: `lib/main.dart`, `lib/app.dart` (bọc `AppOrchestrator`, an toàn Firebase & placeholder route), `lib/core/configs/di.dart`, `lib/core/configs/prepare_environment.dart` (bootstrap pipeline tuần tự và song song an toàn cho runtime services).
 3. Chuẩn hoá cấu hình monorepo trong `pubspec.yaml` (`workspace`, local package paths, `finvoras_gen`, `melos.scripts`).
 4. Root dependency sync (`pub get`).
 5. Package dependency sync cho workspace đã chọn.
@@ -149,9 +149,13 @@ Sinh các class Dart type-safe từ cấu hình `finvoras_gen` trong `pubspec.ya
 ```sh
 # Sử dụng pubspec.yaml mặc định
 finvoras_gen assets
+# Hoặc chạy shorthand trực tiếp từ root CLI
+finvoras_gen
 
 # Chỉ định file pubspec tùy chỉnh
 finvoras_gen assets --config path/to/pubspec.yaml
+# Hoặc shorthand tại root
+finvoras_gen -c path/to/pubspec.yaml
 
 # Kết hợp với build.yaml
 finvoras_gen assets --config pubspec.yaml --build build.yaml
@@ -160,7 +164,7 @@ finvoras_gen assets --config pubspec.yaml --build build.yaml
 **Options:**
 
 | Flag | Viết tắt | Mặc định | Mô tả |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `--config` | `-c` | `pubspec.yaml` | Đường dẫn đến file pubspec.yaml |
 | `--build` | `-b` | | Đường dẫn đến file build.yaml |
 
