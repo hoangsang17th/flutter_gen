@@ -48,7 +48,7 @@ void main() {
     });
 
     test('updateIosPodfilePlatform should update platform version', () async {
-      final iosDir = Directory('ios')..createSync();
+      Directory('ios').createSync();
       final podfile = File('ios/Podfile')
         ..writeAsStringSync("platform :ios, '12.0'\ntarget 'Runner' do\nend");
 

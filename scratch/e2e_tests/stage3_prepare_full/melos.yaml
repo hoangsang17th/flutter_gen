@@ -1,0 +1,15 @@
+name: stageone
+packages:
+  - .
+  - packages/**
+
+scripts:
+  get:
+    run: melos exec -- "rm -f pubspec.lock && flutter pub get"
+    description: Delete lock file and get all dependencies
+  analyze:
+    run: melos exec -- "flutter analyze"
+    description: Run `flutter analyze` in all packages
+  build_assets:
+    run: melos exec --concurrency=1 --dir-exists=assets -- "flutter pub get && if grep -q \"build_runner\" pubspec.yaml; then dart run build_runner build --delete-conflicting-outputs; else echo 'Skipping build_runner'; fi && finvoras_gen assets -c pubspec.yaml"
+    description: Generate assets code
