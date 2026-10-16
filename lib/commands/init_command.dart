@@ -4,11 +4,18 @@ import 'base_command.dart';
 
 class InitCommand extends BaseCommand {
   InitCommand() {
-    argParser.addOption(
-      'app-name',
-      abbr: 'n',
-      help: 'Formatted App Name for iOS/Android (e.g., "My Super App")',
-    );
+    argParser
+      ..addOption(
+        'app-name',
+        abbr: 'n',
+        help: 'Formatted App Name for iOS/Android (e.g., "My Super App")',
+      )
+      ..addOption(
+        'packages-path',
+        abbr: 'p',
+        help:
+            'Custom path to local packages directory (optional, used if offline or custom location)',
+      );
   }
 
   @override
@@ -65,40 +72,68 @@ class InitCommand extends BaseCommand {
     // 3. Create Flutter App
     await flutterService.create(rawAppName, org);
 
-    // 4. Setup Git Submodules
+    // 4. Setup Packages
     if (!Directory('packages').existsSync()) {
-      try {
-        await gitService.clone(
-          'https://github.com/hoangsang17th/packages',
-          'packages',
-        );
-      } catch (e) {
-        print('⚠️ Could not clone packages from remote git repository: $e');
-        final localCandidates = [
-          '../packages',
-          '../../packages',
-          '../../../packages',
-          '/Volumes/TurboBox/Projects/idea-vault/apps/keynd/packages',
-        ];
-        bool copied = false;
-        for (final candidate in localCandidates) {
-          final dir = Directory(candidate);
-          if (dir.existsSync() &&
-              File('${dir.path}/app_core/pubspec.yaml').existsSync()) {
-            print('📦 Copying local packages from $candidate...');
-            await _copyDirectory(dir, Directory('packages'));
-            copied = true;
-            break;
-          }
+      bool packagesReady = false;
+
+      // 4.1 Check if custom packages-path option or FINVORAS_PACKAGES_PATH env is provided
+      final customPackagesPath = argResults?['packages-path'] as String? ??
+          Platform.environment['FINVORAS_PACKAGES_PATH'];
+      if (customPackagesPath != null && customPackagesPath.isNotEmpty) {
+        final dir = Directory(customPackagesPath);
+        if (dir.existsSync() &&
+            File('${dir.path}/app_core/pubspec.yaml').existsSync()) {
+          print('📦 Copying packages from custom path: $customPackagesPath...');
+          await _copyDirectory(dir, Directory('packages'));
+          packagesReady = true;
+        } else {
+          print(
+            '⚠️ Provided packages-path is invalid or missing app_core: $customPackagesPath',
+          );
         }
-        if (!copied) {
-          rethrow;
+      }
+
+      // 4.2 Clone from git repository
+      if (!packagesReady) {
+        try {
+          await gitService.clone(
+            'https://github.com/hoangsang17th/packages',
+            'packages',
+          );
+          packagesReady = true;
+        } catch (e) {
+          print('⚠️ Could not clone packages from remote git repository: $e');
+          final localCandidates = [
+            '../packages',
+            '../../packages',
+            '../../../packages',
+          ];
+          for (final candidate in localCandidates) {
+            final dir = Directory(candidate);
+            if (dir.existsSync() &&
+                File('${dir.path}/app_core/pubspec.yaml').existsSync()) {
+              print('📦 Found local packages at $candidate, copying...');
+              await _copyDirectory(dir, Directory('packages'));
+              packagesReady = true;
+              break;
+            }
+          }
+          if (!packagesReady) {
+            print(
+              '💡 Tip: Make sure your Git credentials/SSH have access to https://github.com/hoangsang17th/packages, or supply --packages-path <path>.',
+            );
+            rethrow;
+          }
         }
       }
     }
 
     // 5. Configure Project (YAML & Melos)
     await _configureProject(appName, appId);
+
+    // Setup VS Code configurations
+    await projectService.setupVscodeSettings();
+    await projectService.setupVscodeLaunchConfig(appName: appName);
 
     // 6. Native Setup (iOS)
     await projectService.updateIosPodfilePlatform('15.0');
