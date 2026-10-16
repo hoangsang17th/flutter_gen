@@ -97,6 +97,7 @@ apple_id("apple@example.com") # TODO: Update your Apple ID
     // 4. Write custom Fastfile
     if (platform == 'android') {
       await _writeAndroidFastfile(appId, flavors);
+      await _setupAndroidSigning();
     } else {
       await _writeIosFastfile(appId, flavors);
     }
@@ -196,14 +197,14 @@ platform :android do
 
     increment_version
 
-    use_flavor = File.directory?("../../android/app/src/#{flavor}")
+    use_flavor = File.directory?("app/src/#{flavor}") || File.directory?("../app/src/#{flavor}")
     
     build_cmd = "cd ../.. && flutter build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols"
     if use_flavor
       build_cmd += " --flavor #{flavor}"
-      aab_path = "../../build/app/outputs/bundle/#{flavor}Release/app-#{flavor}-release.aab"
+      aab_path = "../build/app/outputs/bundle/#{flavor}Release/app-#{flavor}-release.aab"
     else
-      aab_path = "../../build/app/outputs/bundle/release/app-release.aab"
+      aab_path = "../build/app/outputs/bundle/release/app-release.aab"
     end
     
     sh(build_cmd)
@@ -227,14 +228,14 @@ platform :android do
     # Set App ID dynamically for Appfile
     ENV["APP_ID"] = FLAVOR_IDS[flavor] || "$defaultAppId"
 
-    use_flavor = File.directory?("../../android/app/src/#{flavor}")
+    use_flavor = File.directory?("app/src/#{flavor}") || File.directory?("../app/src/#{flavor}")
     
     build_cmd = "cd ../.. && flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols"
     if use_flavor
       build_cmd += " --flavor #{flavor}"
-      apk_path = "../../build/app/outputs/flutter-apk/app-#{flavor}-release.apk"
+      apk_path = "../build/app/outputs/flutter-apk/app-#{flavor}-release.apk"
     else
-      apk_path = "../../build/app/outputs/flutter-apk/app-release.apk"
+      apk_path = "../build/app/outputs/flutter-apk/app-release.apk"
     end
 
     sh(build_cmd)
@@ -329,7 +330,7 @@ platform :ios do
     sh(build_cmd)
     
     upload_to_testflight(
-      ipa: "../../build/ios/ipa/Runner.ipa",
+      ipa: "../build/ios/ipa/Runner.ipa",
       skip_waiting_for_build_processing: true
     )
     
@@ -358,5 +359,167 @@ end
 ''';
     await fastfile.writeAsString(content);
     print('📝 Updated ios/fastlane/Fastfile');
+  }
+
+  Future<void> _setupAndroidSigning() async {
+    // 1. Create key.properties.example if not exists
+    final keyPropertiesExample = File('android/key.properties.example');
+    if (!keyPropertiesExample.existsSync()) {
+      await keyPropertiesExample.writeAsString('''storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=upload
+storeFile=upload-keystore.jks
+''');
+      print('📝 Created android/key.properties.example');
+    }
+
+    // 2. Ensure .gitignore excludes key.properties and *.jks / *.keystore
+    final gitignore = File('android/.gitignore');
+    if (gitignore.existsSync()) {
+      var content = await gitignore.readAsString();
+      var modified = false;
+      if (!content.contains('key.properties')) {
+        content += '\n# Keystore & Signing\nkey.properties\n';
+        modified = true;
+      }
+      if (!content.contains('*.jks')) {
+        content += '*.jks\n';
+        modified = true;
+      }
+      if (!content.contains('*.keystore')) {
+        content += '*.keystore\n';
+        modified = true;
+      }
+      if (modified) {
+        await gitignore.writeAsString(content);
+        print('📝 Updated android/.gitignore with keystore ignore patterns');
+      }
+    }
+
+    // 3. Configure android/app/build.gradle.kts or build.gradle
+    final buildGradleKts = File('android/app/build.gradle.kts');
+    final buildGradle = File('android/app/build.gradle');
+
+    if (buildGradleKts.existsSync()) {
+      await _configureBuildGradleKts(buildGradleKts);
+    } else if (buildGradle.existsSync()) {
+      await _configureBuildGradle(buildGradle);
+    }
+  }
+
+  Future<void> _configureBuildGradleKts(File file) async {
+    var content = await file.readAsString();
+    if (content.contains('keystoreProperties')) {
+      return;
+    }
+
+    // Prepend Properties loader
+    final propertiesLoader = '''import java.util.Properties
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use(keystoreProperties::load)
+}
+
+''';
+    content = propertiesLoader + content;
+
+    // Add signingConfigs inside android {
+    final signingConfigsBlock = '''    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
+''';
+
+    if (content.contains(RegExp(r'android\s*\{'))) {
+      content = content.replaceFirstMapped(
+        RegExp(r'(android\s*\{\n)'),
+        (match) => '${match.group(1)}$signingConfigsBlock',
+      );
+    }
+
+    // Update release buildType signingConfig
+    final debugSigningPattern = RegExp(
+      r'signingConfig\s*=\s*signingConfigs\.getByName\("debug"\)',
+    );
+    final releaseSigningReplacement =
+        '''signingConfig = if (keystorePropertiesFile.exists() && keystoreProperties.getProperty("storeFile") != null && file(keystoreProperties.getProperty("storeFile")).exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }''';
+
+    if (content.contains(debugSigningPattern)) {
+      content = content.replaceFirst(
+        debugSigningPattern,
+        releaseSigningReplacement,
+      );
+    }
+
+    await file.writeAsString(content);
+    print('📝 Configured release signing in android/app/build.gradle.kts');
+  }
+
+  Future<void> _configureBuildGradle(File file) async {
+    var content = await file.readAsString();
+    if (content.contains('keystoreProperties')) {
+      return;
+    }
+
+    // Prepend Properties loader
+    final propertiesLoader = '''def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+''';
+    content = propertiesLoader + content;
+
+    // Add signingConfigs inside android {
+    final signingConfigsBlock = '''    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                storePassword keystoreProperties['storePassword']
+            }
+        }
+    }
+
+''';
+
+    if (content.contains(RegExp(r'android\s*\{'))) {
+      content = content.replaceFirstMapped(
+        RegExp(r'(android\s*\{\n)'),
+        (match) => '${match.group(1)}$signingConfigsBlock',
+      );
+    }
+
+    // Update release buildType signingConfig
+    final debugSigningPattern = RegExp(
+      r'signingConfig\s*=?\s*signingConfigs\.debug',
+    );
+    final releaseSigningReplacement =
+        '''signingConfig (keystorePropertiesFile.exists() && keystoreProperties['storeFile'] && file(keystoreProperties['storeFile']).exists()) ? signingConfigs.release : signingConfigs.debug''';
+
+    if (content.contains(debugSigningPattern)) {
+      content = content.replaceFirst(
+        debugSigningPattern,
+        releaseSigningReplacement,
+      );
+    }
+
+    await file.writeAsString(content);
+    print('📝 Configured release signing in android/app/build.gradle');
   }
 }
