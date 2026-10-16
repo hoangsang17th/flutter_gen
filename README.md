@@ -1,234 +1,235 @@
 # FinvorasGen 🚀
 
-Công cụ CLI nội bộ hỗ trợ phát triển Flutter: khởi tạo dự án chuẩn, sinh code type-safe cho assets, và setup branding đa môi trường.
+**FinvorasGen** là bộ công cụ CLI nội bộ dành cho đội ngũ phát triển Flutter tại **Finvoras**, hỗ trợ tự động hóa toàn bộ vòng đời phát triển ứng dụng:
+- 🏗 **Khởi tạo dự án chuẩn** monorepo & tích hợp bộ thư viện cốt lõi (`packages/`).
+- 🎨 **Setup Branding & Flavors** (`dev`, `qa`, `prod`, launcher icons, splash screen, native signing).
+- ⚙️ **One-shot Bootstrap & Prepare** (`lib/main.dart`, `app.dart`, `di.dart`, `prepare_environment.dart`, `.vscode/launch.json`).
+- 📦 **Sinh mã Type-Safe** cho Assets (Images, SVG, Lottie, Rive), Colors, Fonts và Đa ngôn ngữ (Locales/i18n).
+- 🚀 **Tự động hóa CI/CD Deployment** với Fastlane cho Android & iOS.
 
 ---
 
-## 🛠 Cài đặt
+## 📋 Yêu cầu tiên quyết (Prerequisites)
 
-Vì đây là công cụ nội bộ, cài đặt trực tiếp từ source:
+Trước khi cài đặt và sử dụng, đảm bảo máy tính của bạn đã có:
 
+1. **Dart SDK >= 3.6.0** & **Flutter SDK** (hoặc [FVM](https://fvm.app/)).
+2. **Git & Quyền truy cập**: Đã cấu hình SSH Key hoặc Personal Access Token có quyền truy cập repo:
+   - Repo công cụ: `https://github.com/hoangsang17th/finvoras_gen`
+   - Repo thư viện chung: `https://github.com/hoangsang17th/packages`
+3. **PATH Environment**: Đảm bảo đường dẫn `~/.pub-cache/bin` đã được thêm vào PATH hệ thống (trong `~/.zshrc` hoặc `~/.bashrc`):
+   ```sh
+   export PATH="$PATH":"$HOME/.pub-cache/bin"
+   ```
+
+---
+
+## 🛠 Cài đặt & Cập nhật (Team Setup)
+
+Công cụ được lưu hành nội bộ qua Git private repository. Thành viên trong team cài đặt trực tiếp qua `dart pub global`:
+
+### Cài đặt lần đầu
 ```sh
-# Clone repo
-git clone <repo-url> finvoras_gen
-cd finvoras_gen
+dart pub global activate --source git https://github.com/hoangsang17th/finvoras_gen.git
+```
+*(Nếu bạn cấu hình Git qua SSH, có thể dùng: `dart pub global activate --source git git@github.com:hoangsang17th/finvoras_gen.git`)*
 
-# Cài đặt global
-dart pub global deactivate finvoras_gen
-dart pub global activate --source path .
-finvoras_gen refresh
+### Cập nhật khi có phiên bản mới
+Mỗi khi có cập nhật mới trên nhánh `main`, chỉ cần chạy lại lệnh cài đặt:
+```sh
+dart pub global activate --source git https://github.com/hoangsang17th/finvoras_gen.git
+finvoras_gen version
 ```
 
-Đảm bảo `~/.pub-cache/bin` có trong `PATH` của bạn.
+### Chạy từ source cục bộ (Dành cho Core Maintainer)
+```sh
+cd finvoras_gen
+dart pub global activate --source path .
+```
 
 ---
 
-## 🚀 Các lệnh
+## 🚦 Quy trình chuẩn khi tạo & thiết lập ứng dụng mới
 
-### `init` — Khởi tạo dự án mới
-
-Tự động hoá toàn bộ setup ban đầu cho một Flutter project chuẩn Finvoras.
+```mermaid
+flowchart LR
+    A["1. finvoras_gen init"] --> B["2. finvoras_gen branding"]
+    B --> C["3. finvoras_gen prepare"]
+    C --> D["4. Mở VS Code & Chạy app!"]
+```
 
 ```sh
-finvoras_gen init <app-id>
+# 1. Khởi tạo app và kéo packages chuẩn
+finvoras_gen init vn.com.finvoras.my_app --app-name "My App"
+cd my_app
+
+# 2. Cấu hình đa môi trường (dev, qa, prod), splash và icon
+finvoras_gen branding --envs dev,qa,prod --app-name "My App"
+
+# 3. Bootstrap toàn bộ mã nguồn core, DI, routing và VS Code profiles
+finvoras_gen prepare -r flutter --workspace all --yes
+```
+
+---
+
+## 📖 Chi tiết các lệnh (Command Reference)
+
+### 1. `init` — Khởi tạo dự án Flutter chuẩn
+
+Khởi tạo cấu trúc dự án Flutter mới tích hợp bộ submodule `packages/` và các cấu hình monorepo chuẩn mực.
+
+```sh
+finvoras_gen init <app-id> [options]
 
 # Ví dụ
-finvoras_gen init vn.com.finvoras.myapp
-
-# Khởi tạo với tên ứng dụng tùy chỉnh (sẽ ghi vào pubspec.yaml cho branding)
 finvoras_gen init vn.com.finvoras.myapp --app-name "My Super App"
 ```
 
-**Options:**
+**Các tham số (Options):**
 
 | Flag | Viết tắt | Mặc định | Mô tả |
 |---|---|---|---|
-| `--app-name` | `-n` | `Auto-format` | Tên hiển thị của ứng dụng trên iOS/Android |
+| `--app-name` | `-n` | Auto format từ ID | Tên hiển thị của app trên iOS/Android (VD: `"Finvoras Hub"`) |
+| `--packages-path` | `-p` | `null` | Đường dẫn tới thư mục `packages` cục bộ (hữu ích khi làm việc offline hoặc dev monorepo) |
 
 **Các bước tự động thực hiện:**
-
-1. Chạy `flutter create` với `--org` và `--project-name` từ `<app-id>`.
-2. Clone submodule nội bộ `packages` từ GitHub.
-3. Link các local packages vào `pubspec.yaml` (workspace + dependencies).
-4. Ghi cấu hình `finvoras_gen` vào `pubspec.yaml` (output, assets, locales...).
-5. Thêm bộ package chuẩn: `injectable`, `get_it`, `equatable`, `build_runner`, `flutter_localizations`, `flutter_easyloading`, `get`, `firebase_core`,...
-6. Tạo `melos.yaml` và đồng bộ `melos.scripts` (`get`, `analyze`, `build_assets`) vào cả `pubspec.yaml` (hỗ trợ Dart Pub Workspaces).
-7. Tạo thư mục `assets/images/` và `assets/locales/`.
-8. Cập nhật `ios/Podfile` lên platform `15.0` cùng post_install hook đồng bộ deployment target cho toàn bộ CocoaPods.
-9. Chạy `flutter pub get`.
-10. Tự động chạy `pod install --repo-update` trong thư mục `ios` để cập nhật CocoaPods.
-
-> **Lưu ý:** Nếu thư mục `packages/` đã tồn tại, lệnh sẽ hỏi xác nhận trước khi tiếp tục.
+1. Tạo Flutter app với `--org` và project name trích xuất từ `<app-id>`.
+2. Tải bộ thư viện `packages/` (thử clone từ GitHub, nếu offline sẽ tìm kiếm từ `--packages-path`, biến môi trường `FINVORAS_PACKAGES_PATH`, hoặc các thư mục `packages` lân cận).
+3. Chuẩn hóa `pubspec.yaml`: Liên kết workspace packages, khai báo `finvoras_gen`, `melos.scripts`, thêm bộ thư viện chuẩn (`injectable`, `get_it`, `firebase_core`, `flutter_easyloading`,...).
+4. Thiết lập cấu hình `.vscode/launch.json` và `.vscode/settings.json`.
+5. Đồng bộ `ios/Podfile` lên platform `15.0`.
+6. Chạy `flutter pub get` và `pod install --repo-update` trên macOS.
 
 ---
 
-### `branding` — Setup flavors, splash & icons
+### 2. `prepare` — Monorepo One-Shot Bootstrap
 
-Tự động cấu hình `flutter_flavorizr`, native splash screen và launcher icons cho tất cả môi trường.
+Thiết lập toàn bộ khung mã nguồn khởi động cho dự án monorepo (Core bootstrapping, DI, Environment, Routing placeholder).
 
 ```sh
-# Mặc định: dev, qa, prod — behavior mode (chung Application ID)
+# Sử dụng Flutter SDK mặc định
+finvoras_gen prepare
+
+# Chỉ định sử dụng FVM và chạy non-interactive
+finvoras_gen prepare --runtime fvm --workspace all --yes
+```
+
+**Các tham số (Options):**
+
+| Flag | Viết tắt | Mặc định | Mô tả |
+|---|---|---|---|
+| `--runtime` | `-r` | `flutter` | Runtime thực thi: `flutter` hoặc `fvm` |
+| `--workspace` | `-w` | `all` | Workspace mục tiêu: `all`, `root`, hoặc danh sách `packages/a,packages/b` |
+| `--yes` | `-y` | `false` | Bỏ qua các bước xác nhận thủ công (phù hợp chạy CI/Script) |
+
+**Tự động sinh các file quan trọng:**
+- `lib/main.dart`: Entrypoint chính.
+- `lib/app.dart`: Khởi tạo ứng dụng với `AppOrchestrator`, App theme, route observer, Firebase.
+- `lib/core/configs/di.dart`: Cấu hình Dependency Injection (`get_it`, `injectable`).
+- `lib/core/configs/prepare_environment.dart`: Pipeline chuẩn bị môi trường runtime an toàn.
+- `lib/core/configs/app_keys.dart`: Khai báo Global Keys.
+- `.vscode/launch.json`: Cấu hình sẵn các profile chạy Debug / Profile / Release.
+
+---
+
+### 3. `branding` — Setup Flavors, Native Splash & App Icons
+
+Cấu hình flavors cho đa môi trường, icon ứng dụng và splash screen theo tiêu chuẩn Production.
+
+```sh
+# Mặc định: 3 môi trường dev, qa, prod (Behavior mode)
 finvoras_gen branding
 
-# Tùy chỉnh environments
-finvoras_gen branding --envs dev,staging,prod
+# Tùy biến môi trường và logo
+finvoras_gen branding --envs dev,staging,prod --logo assets/images/my_logo.png --app-name "My App"
 
 # Platform mode: mỗi flavor có Application ID riêng (thêm suffix .<env>)
 finvoras_gen branding --type platform --envs dev,stg,prod
 
-# Chỉ định đường dẫn logo
-finvoras_gen branding --logo assets/images/my_logo.png
-
-# Tùy chỉnh tên hiển thị của ứng dụng (nếu không, sẽ tự động format từ pubspec.yaml)
-finvoras_gen branding --app-name "Siêu Ứng Dụng"
-
-# CI mode: bỏ qua tất cả confirmation prompts
+# Chế độ CI: không hỏi xác nhận
 finvoras_gen branding --yes
 ```
 
-**Options:**
+**Các tham số (Options):**
 
 | Flag | Viết tắt | Mặc định | Mô tả |
-| --- | --- | --- | --- |
-| `--type` | `-t` | `behavior` | `behavior` (chung 1 App ID) hoặc `platform` (mỗi flavor 1 App ID) |
-| `--envs` | `-e` | `dev,qa,prod` | Danh sách môi trường, phân cách bằng dấu phẩy |
-| `--logo` | | `assets/images/logo.png` | Đường dẫn đến file ảnh logo |
-| `--app-name` | `-n` | `Auto-format` | Tên hiển thị của ứng dụng trên iOS/Android |
-| `--yes` | `-y` | `false` | Bỏ qua confirmation (dùng cho CI) |
-| `--dry-run` | | `false` | Xem trước thay đổi mà không ghi file |
+|---|---|---|---|
+| `--type` | `-t` | `behavior` | `behavior` (dùng chung App ID) hoặc `platform` (mỗi môi trường 1 App ID) |
+| `--envs` | `-e` | `dev,qa,prod` | Danh sách các môi trường, phân cách bởi dấu phẩy |
+| `--logo` | | `assets/images/logo.png` | Đường dẫn tới file ảnh logo nguồn |
+| `--app-name` | `-n` | Auto | Tên hiển thị ứng dụng |
+| `--yes` | `-y` | `false` | Chạy không cần tương tác bàn phím |
+| `--dry-run` | | `false` | Xem trước các thay đổi mà không ghi vào file |
 
-**Các bước tự động thực hiện:**
-
-1. Đọc `app_id` từ `finvoras_gen.app_id` trong `pubspec.yaml`.
-2. Ghi cấu hình `flavorizr` vào `pubspec.yaml`.
-3. Tạo `flutter_native_splash-<env>.yaml` và `flutter_launcher_icons-<env>.yaml` cho từng môi trường.
-4. Thêm dev dependencies: `flutter_flavorizr`, `flutter_native_splash`, `flutter_launcher_icons`.
-5. Chạy `flutter_flavorizr`, sinh splash và icons cho từng môi trường.
-
-> **Lưu ý:** Khi sử dụng flavors, bạn cần build app với flag `--flavor <name>` (ví dụ: `flutter build appbundle --flavor prod`). Lệnh `fastlane` của công cụ này đã được cấu hình để tự động xử lý việc này.
+**Tính năng nâng cao:**
+- Tự động sinh `flutter_native_splash-<env>.yaml` & `flutter_launcher_icons-<env>.yaml`.
+- Tự động cấu hình signing cấu hình Release trong `android/app/build.gradle`.
+- Tự động đồng bộ các file launch configuration trong `.vscode/launch.json` cho từng flavor (`dev Debug`, `prod Release`,...).
 
 ---
 
-### `prepare` — Monorepo project bootstrap
+### 4. `assets` — Sinh mã Type-Safe cho Assets, Fonts, Colors & Locales
 
-Lệnh `prepare` đóng vai trò là "one-shot bootstrap" để thiết lập ứng dụng monorepo một cách hoàn chỉnh.
-
-```sh
-# Chạy chuẩn bị cho toàn bộ workspace với FVM
-finvoras_gen prepare --runtime fvm --workspace all --yes
-
-# Chỉ định runtime flutter mặc định
-finvoras_gen prepare --runtime flutter
-```
-
-**Options:**
-
-| Flag | Viết tắt | Mặc định | Mô tả |
-| --- | --- | --- | --- |
-| `--runtime` | `-r` | | Bắt buộc: `flutter` hoặc `fvm` |
-| `--workspace` | `-w` | `all` | `all`, `root`, hoặc danh sách: `packages/a,packages/b` |
-| `--yes` | `-y` | `false` | Chạy non-interactive |
-
-**Pipeline của `prepare`:**
-
-1. Đọc cấu hình từ `ProjectSpec` (nhận dạng monorepo, app name,...).
-2. Sử dụng Mustache template engine để render các file critical: `lib/main.dart`, `lib/app.dart` (bọc `AppOrchestrator`, an toàn Firebase & placeholder route), `lib/core/configs/di.dart`, `lib/core/configs/prepare_environment.dart` (bootstrap pipeline tuần tự và song song an toàn cho runtime services).
-3. Chuẩn hoá cấu hình monorepo trong `pubspec.yaml` (`workspace`, local package paths, `finvoras_gen`, `melos.scripts`).
-4. Root dependency sync (`pub get`).
-5. Package dependency sync cho workspace đã chọn.
-6. Codegen package (`build_runner`, `finvoras_gen assets` nếu package có cấu hình).
-7. Codegen root.
-8. Verify + in summary `done/failed/skipped` theo từng step.
-
----
-
-### `assets` — Sinh code type-safe cho assets
-
-Sinh các class Dart type-safe từ cấu hình `finvoras_gen` trong `pubspec.yaml`.
+Sinh mã nguồn Dart type-safe dựa trên khai báo trong `pubspec.yaml`.
 
 ```sh
-# Sử dụng pubspec.yaml mặc định
+# Chạy với pubspec.yaml mặc định
 finvoras_gen assets
-# Hoặc chạy shorthand trực tiếp từ root CLI
-finvoras_gen
+# (hoặc gõ tắt: finvoras_gen)
 
-# Chỉ định file pubspec tùy chỉnh
-finvoras_gen assets --config path/to/pubspec.yaml
-# Hoặc shorthand tại root
-finvoras_gen -c path/to/pubspec.yaml
-
-# Kết hợp với build.yaml
-finvoras_gen assets --config pubspec.yaml --build build.yaml
+# Chỉ định file pubspec hoặc build.yaml tùy chỉnh
+finvoras_gen assets -c path/to/pubspec.yaml
+finvoras_gen assets -c pubspec.yaml -b build.yaml
 ```
 
-**Options:**
-
-| Flag | Viết tắt | Mặc định | Mô tả |
-| --- | --- | --- | --- |
-| `--config` | `-c` | `pubspec.yaml` | Đường dẫn đến file pubspec.yaml |
-| `--build` | `-b` | | Đường dẫn đến file build.yaml |
+**Thành phần sinh ra:**
+- `assets.gen.dart`: Truy cập tài nguyên type-safe (`AppAssets.images.logo.image(...)`, `AppAssets.icons.home.svg(...)`). Hỗ trợ SVG, Lottie, Rive.
+- `colors.gen.dart`: Mã màu từ XML / Asset colors.
+- `fonts.gen.dart`: Family font type-safe.
+- `locales.gen.dart`: Đa ngôn ngữ i18n (`AppLocalesKeys.greeting.tr`).
 
 ---
 
-### `fastlane` — Setup deployment scripts
+### 5. `fastlane` — Thiết lập Pipeline Deploy tự động
 
-Cấu hình Fastlane để tự động hóa việc deploy cho cả Android và iOS lên Google Play Store, TestFlight và Firebase App Distribution.
+Tự động thiết lập hạ tầng Fastlane cho Android và iOS với các lanes chuẩn hóa.
 
 ```sh
 finvoras_gen fastlane
 ```
 
-**Các bước tự động thực hiện:**
-
-1. Kiểm tra sự tồn tại của thư mục `android/` và `ios/`.
-2. **Tự động sinh cấu hình**: Tự động tạo `Appfile` (sử dụng `app_id` từ dự án) và `Gemfile` mà không cần nhập liệu thủ công.
-3. Tạo file `Fastfile` với các lane chuẩn cho cả 2 nền tảng:
-   - `increment_version`: Tự động tăng build number trong `pubspec.yaml` (đồng bộ cho cả Android/iOS).
-   - `deploy`: Build và Upload lên Play Store (`internal`) hoặc TestFlight.
-   - `production`: Build và Upload lên Play Store (`production`) hoặc App Store.
-   - `beta`: Build và Upload lên Firebase App Distribution.
-4. **Tùy chọn nâng cao**: Sau khi setup cơ bản, bạn có thể chọn chạy `fastlane init` để thiết lập nâng cao (metadata, screenshots).
-
-**Đặc điểm nổi bật:**
-
-- **Auto Flow**: Tự động lấy `app_id` từ `pubspec.yaml` để cấu hình `Appfile`.
-- **Đa nền tảng**: Hỗ trợ đầy đủ cho cả Android và iOS trong cùng một lệnh.
-- **Hỗ trợ Flavor**: Tự động nhận diện nếu dự án có sử dụng flavors. Mặc định sẽ build flavor `prod`.
-- **Release Notes**: Tự động tạo file changelog cho Android từ input của người dùng.
+**Các lane chuẩn được tạo sẵn trong `Fastfile`:**
+- `increment_version`: Tự động tăng build number trong `pubspec.yaml` đồng bộ cho cả Android/iOS.
+- `deploy`: Build và upload lên Google Play Store (`internal track`) hoặc TestFlight.
+- `production`: Build và upload bản phát hành chính thức lên Google Play / App Store.
+- `beta`: Build và upload lên Firebase App Distribution.
 
 ---
 
-### `refresh` — Dọn dẹp & lấy lại dependencies
+### 6. Các lệnh tiện ích khác
 
-Hữu ích sau khi đổi branch hoặc gặp lỗi cache.
-
-```sh
-finvoras_gen refresh
-```
-
-Tự động chạy `flutter clean` rồi `flutter pub get`.
-
----
-
-### `version` — Xem phiên bản
-
-```sh
-finvoras_gen version
-# hoặc
-finvoras_gen -v
-finvoras_gen --version
-```
+- **`refresh`**: Dọn dẹp cache và kéo lại dependencies (tương đương `flutter clean && flutter pub get`):
+  ```sh
+  finvoras_gen refresh
+  ```
+- **`version`**: Kiểm tra phiên bản CLI đang cài:
+  ```sh
+  finvoras_gen version
+  # hoặc
+  finvoras_gen -v
+  ```
 
 ---
 
-## 📝 Cấu hình `pubspec.yaml`
+## ⚙️ Cấu hình chuẩn trong `pubspec.yaml`
 
-Sau khi chạy `init`, cấu hình sau sẽ được tự động thêm vào `pubspec.yaml` của dự án đích:
+Cấu hình mẫu được tích hợp trong dự án:
 
 ```yaml
 finvoras_gen:
-  app_id: vn.com.finvoras.myapp   # Application ID — dùng bởi branding command
-  output: lib/generated/           # Thư mục xuất file sinh code
+  app_id: vn.com.finvoras.myapp
+  app_name: My App
+  output: lib/generated/
   line_length: 80
   assets:
     enabled: true
@@ -247,23 +248,31 @@ finvoras_gen:
 
 ---
 
-## 🔗 Submodule Packages
+## ❓ Xử lý sự cố thường gặp (Troubleshooting)
 
-Lệnh `init` sẽ clone repository packages nội bộ vào thư mục `packages/`:
+### 1. Lỗi `command not found: finvoras_gen`
+- **Nguyên nhân**: Thư mục cache binary của pub chưa có trong biến môi trường `$PATH`.
+- **Cách khắc phục**: Mở file `~/.zshrc` (hoặc `~/.bashrc`), thêm dòng sau vào cuối file rồi restart terminal:
+  ```sh
+  export PATH="$PATH":"$HOME/.pub-cache/bin"
+  ```
 
-```
-https://github.com/hoangsang17th/packages
-```
+### 2. Lỗi quyền truy cập khi `init` kéo `packages` (Permission denied / Git clone error)
+- **Nguyên nhân**: Máy tính chưa cấu hình SSH Key hoặc Personal Access Token có quyền truy cập repo `https://github.com/hoangsang17th/packages`.
+- **Cách khắc phục**:
+  - Cách 1: Thiết lập SSH Key trên tài khoản GitHub của bạn.
+  - Cách 2: Nếu làm việc offline hoặc đã có thư mục packages sẵn trên máy, dùng cờ:
+    ```sh
+    finvoras_gen init vn.com.finvoras.app -p /path/to/my/local/packages
+    ```
+    Hoặc đặt biến môi trường:
+    ```sh
+    export FINVORAS_PACKAGES_PATH="/path/to/my/local/packages"
+    ```
+
+### 3. Lỗi CocoaPods trên macOS khi chạy `init`
+- Đảm bảo CocoaPods đã được cài đặt (`pod --version`). Nếu gặp lỗi tương thích deployment target, `finvoras_gen` đã cấu hình sẵn post_install hook cho iOS 15.0 trong Podfile, bạn chỉ cần chạy `cd ios && pod install --repo-update`.
 
 ---
 
-## 🧪 Kiểm thử nhanh
-
-```bash
-# Tạo thư mục test, chạy init trong đó
-mkdir /tmp/test_app && cd /tmp/test_app
-finvoras_gen init vn.io.enth17.chopchop
-
-# Setup branding sau khi init
-finvoras_gen branding
-```
+© 2026 Finvoras. Lưu hành nội bộ.
