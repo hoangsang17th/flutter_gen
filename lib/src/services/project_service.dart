@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
@@ -158,5 +159,134 @@ scripts:
       }
     }
     return current;
+  }
+
+  Future<void> setupVscodeLaunchConfig({
+    String? appName,
+    List<String>? environments,
+    bool force = false,
+  }) async {
+    final dir = Directory('.vscode');
+    if (!dir.existsSync()) {
+      await dir.create(recursive: true);
+    }
+    final file = File('.vscode/launch.json');
+    if (file.existsSync() && !force && (environments == null || environments.isEmpty)) {
+      return;
+    }
+
+    final resolvedAppName = appName ?? _detectAppName() ?? 'App';
+    final List<Map<String, dynamic>> configurations = [];
+
+    // Check if environments are specified or exist in lib/
+    List<String> envs = environments != null ? List<String>.from(environments) : [];
+    if (envs.isEmpty) {
+      final libDir = Directory('lib');
+      if (libDir.existsSync()) {
+        final mainFiles = libDir
+            .listSync()
+            .whereType<File>()
+            .map((f) => f.path.split(Platform.pathSeparator).last)
+            .where((name) => name.startsWith('main_') && name.endsWith('.dart'))
+            .toList();
+        for (final f in mainFiles) {
+          final env = f.replaceFirst('main_', '').replaceFirst('.dart', '');
+          if (!envs.contains(env)) {
+            envs.add(env);
+          }
+        }
+      }
+    }
+
+    if (envs.isNotEmpty) {
+      for (final env in envs) {
+        configurations.add({
+          'name': '$env Debug',
+          'request': 'launch',
+          'type': 'dart',
+          'flutterMode': 'debug',
+          'program': 'lib/main_$env.dart',
+        });
+        configurations.add({
+          'name': '$env Profile',
+          'request': 'launch',
+          'type': 'dart',
+          'flutterMode': 'profile',
+          'program': 'lib/main_$env.dart',
+        });
+        configurations.add({
+          'name': '$env Release',
+          'request': 'launch',
+          'type': 'dart',
+          'flutterMode': 'release',
+          'program': 'lib/main_$env.dart',
+        });
+      }
+    } else {
+      configurations.add({
+        'name': '$resolvedAppName (Debug)',
+        'request': 'launch',
+        'type': 'dart',
+        'flutterMode': 'debug',
+        'program': 'lib/main.dart',
+      });
+      configurations.add({
+        'name': '$resolvedAppName (Profile)',
+        'request': 'launch',
+        'type': 'dart',
+        'flutterMode': 'profile',
+        'program': 'lib/main.dart',
+      });
+      configurations.add({
+        'name': '$resolvedAppName (Release)',
+        'request': 'launch',
+        'type': 'dart',
+        'flutterMode': 'release',
+        'program': 'lib/main.dart',
+      });
+    }
+
+    const encoder = JsonEncoder.withIndent('    ');
+    final content = encoder.convert({
+      'version': '0.2.0',
+      'configurations': configurations,
+    });
+
+    await file.writeAsString('$content\n');
+    print('✅ Generated .vscode/launch.json');
+  }
+
+  Future<void> setupVscodeSettings() async {
+    final dir = Directory('.vscode');
+    if (!dir.existsSync()) {
+      await dir.create(recursive: true);
+    }
+    final file = File('.vscode/settings.json');
+    if (file.existsSync()) return;
+
+    const encoder = JsonEncoder.withIndent('    ');
+    final content = encoder.convert({
+      'search.exclude': {'**/build': true},
+      'files.exclude': {'**/build': true},
+      'dart.analysisExcludedFolders': ['build'],
+    });
+
+    await file.writeAsString('$content\n');
+    print('✅ Generated .vscode/settings.json');
+  }
+
+  String? _detectAppName() {
+    final file = File('pubspec.yaml');
+    if (!file.existsSync()) return null;
+    try {
+      final doc = loadYaml(file.readAsStringSync());
+      final finvorasGen = doc['finvoras_gen'];
+      if (finvorasGen is Map && finvorasGen['app_name'] != null) {
+        return finvorasGen['app_name'].toString();
+      }
+      return doc['name']?.toString();
+    } catch (_) {
+      return null;
+    }
   }
 }

@@ -17,8 +17,8 @@ class PrepareCommand extends BaseCommand {
         'runtime',
         abbr: 'r',
         allowed: ['flutter', 'fvm'],
-        mandatory: true,
-        help: 'Flutter runtime to use (flutter or fvm).',
+        defaultsTo: 'flutter',
+        help: 'Flutter runtime to use (flutter or fvm, defaults to flutter).',
       )
       ..addOption(
         'workspace',
@@ -144,7 +144,10 @@ class PrepareCommand extends BaseCommand {
     final appKeysContent = templateService.replace(appKeysDartTemplate, data);
     await File('lib/core/configs/app_keys.dart').writeAsString(appKeysContent);
 
-    logInfo('Scaffolded: main.dart, app.dart, di.dart, prepare_environment.dart, app_keys.dart');
+    await projectService.setupVscodeSettings();
+    await projectService.setupVscodeLaunchConfig(appName: spec.appName);
+
+    logInfo('Scaffolded: main.dart, app.dart, di.dart, prepare_environment.dart, app_keys.dart, .vscode/launch.json');
   }
 
   Future<void> _normalizePubspecForMonorepo() async {

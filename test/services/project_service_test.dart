@@ -64,5 +64,46 @@ void main() {
       expect(Directory('a/b').existsSync(), isTrue);
       expect(Directory('c/d').existsSync(), isTrue);
     });
+
+    test('setupVscodeLaunchConfig should generate default launch.json', () async {
+      await projectService.setupVscodeLaunchConfig(appName: 'TestApp');
+
+      final file = File('.vscode/launch.json');
+      expect(file.existsSync(), isTrue);
+
+      final content = file.readAsStringSync();
+      expect(content, contains('TestApp (Debug)'));
+      expect(content, contains('TestApp (Profile)'));
+      expect(content, contains('TestApp (Release)'));
+      expect(content, contains('"program": "lib/main.dart"'));
+    });
+
+    test('setupVscodeLaunchConfig should generate flavored launch.json for environments', () async {
+      await projectService.setupVscodeLaunchConfig(
+        appName: 'TestApp',
+        environments: ['dev', 'prod'],
+        force: true,
+      );
+
+      final file = File('.vscode/launch.json');
+      expect(file.existsSync(), isTrue);
+
+      final content = file.readAsStringSync();
+      expect(content, contains('dev Debug'));
+      expect(content, contains('prod Debug'));
+      expect(content, contains('"program": "lib/main_dev.dart"'));
+      expect(content, contains('"program": "lib/main_prod.dart"'));
+    });
+
+    test('setupVscodeSettings should generate settings.json', () async {
+      await projectService.setupVscodeSettings();
+
+      final file = File('.vscode/settings.json');
+      expect(file.existsSync(), isTrue);
+
+      final content = file.readAsStringSync();
+      expect(content, contains('dart.analysisExcludedFolders'));
+      expect(content, contains('build'));
+    });
   });
 }
