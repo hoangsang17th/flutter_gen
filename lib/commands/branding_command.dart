@@ -109,6 +109,12 @@ class BrandingCommand extends BaseCommand {
       await _setupDartFlavors(appName);
     }
     await _setupBrandingFiles();
+    await projectService.setupVscodeSettings();
+    await projectService.setupVscodeLaunchConfig(
+      appName: appName,
+      environments: environments,
+      force: true,
+    );
 
     if (isDryRun) {
       logWarn('Dry run mode → skip execution');
